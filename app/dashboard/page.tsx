@@ -266,17 +266,18 @@ if (resultError) {
     </p>
   </div>
 </div>
-            <h2 className="text-2xl font-black">
-              My Tournaments
-            </h2>
+           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+  <h2 className="text-2xl font-black">
+    My Tournaments
+  </h2>
 
-            <a
-              href="/tournaments"
-              className="rounded-xl bg-green-400 px-5 py-2.5 text-sm font-black text-black no-underline transition hover:bg-green-300"
-            >
-              Browse Tournaments
-            </a>
-          </div>
+  <a
+    href="/tournaments"
+    className="w-full rounded-xl bg-green-400 px-5 py-2.5 text-center text-sm font-black text-black no-underline transition hover:bg-green-300 sm:w-auto"
+  >
+    Browse Tournaments
+  </a>
+</div>
 
           {joinedTournaments.length === 0 ? (
             <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center">
