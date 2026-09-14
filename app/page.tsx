@@ -777,7 +777,7 @@ useEffect(() => {
 <p>
   © 2026 GameArena. All rights reserved. Created by{" "}
   <span className="font-bold text-green-400">
-    Ritesh
+    Ritesh❤️
   </span>
   .
 </p>
