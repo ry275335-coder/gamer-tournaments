@@ -34,11 +34,19 @@ export default function LoginPage() {
       return;
     }
 
-    setMessage("Login successful! Redirecting...");
+setMessage("Login successful! Redirecting...");
 
-    setTimeout(() => {
-      router.push("/dashboard");
-    }, 1000);
+setTimeout(async () => {
+  const { data } = await supabase.auth.getUser();
+
+  const ADMIN_USER_ID = "6431960a-b0c6-4e2a-8b1a-d5017ceae103";
+
+  if (data.user?.id === ADMIN_USER_ID) {
+    router.push("/admin");
+  } else {
+    router.push("/dashboard");
+  }
+}, 1000);
   }
 
   return (
