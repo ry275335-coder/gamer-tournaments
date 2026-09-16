@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 export default function RegisterPage() {
+  const router = useRouter();
+
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [game, setGame] = useState("");
@@ -71,6 +74,10 @@ export default function RegisterPage() {
     setConfirmPassword("");
 
     setLoading(false);
+
+    setTimeout(() => {
+      router.push("/login");
+    }, 1500);
   }
 
   return (
@@ -215,8 +222,8 @@ export default function RegisterPage() {
           <p className="mt-6 text-center text-sm text-gray-400">
             Already have an account?{" "}
             <a
-              href="#"
-              className="font-bold text-green-400"
+              href="/login"
+              className="font-bold text-green-400 hover:text-green-300"
             >
               Login
             </a>

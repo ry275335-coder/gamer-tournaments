@@ -23,10 +23,11 @@ export default function LoginPage() {
 
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+    const { data, error } =
+      await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
     if (error) {
       setMessage("Incorrect email or password. Please try again.");
@@ -34,19 +35,129 @@ export default function LoginPage() {
       return;
     }
 
-setMessage("Login successful! Redirecting...");
+    if (!data.user) {
+      setMessage("Login failed. Please try again.");
+      setLoading(false);
+      return;
+    }
 
-setTimeout(async () => {
-  const { data } = await supabase.auth.getUser();
+    const user = data.user;
 
-  const ADMIN_USER_ID = "6431960a-b0c6-4e2a-8b1a-d5017ceae103";
+    const ADMIN_USER_ID =
+      "6431960a-b0c6-4e2a-8b1a-d5017ceae103";
 
-  if (data.user?.id === ADMIN_USER_ID) {
-    router.push("/admin");
-  } else {
-    router.push("/dashboard");
-  }
-}, 1000);
+    // ==========================================
+    // ADMIN CHECK
+    // ==========================================
+
+    if (user.id === ADMIN_USER_ID) {
+      await supabase.auth.signOut();
+
+      setMessage(
+        "This is an admin account. Please use Admin Login."
+      );
+
+      setLoading(false);
+      return;
+    }
+
+    // ==========================================
+    // ORGANIZER CHECK
+    // ==========================================
+    // This check MUST happen before the player
+    // profile check because an organizer may also
+    // have an old player profile.
+    // ==========================================
+
+    const {
+      data: organizer,
+      error: organizerError,
+    } = await supabase
+      .from("organizers")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (organizerError) {
+      console.error(
+        "Organizer check error:",
+        organizerError
+      );
+
+      await supabase.auth.signOut();
+
+      setMessage(
+        "Unable to verify your account. Please try again."
+      );
+
+      setLoading(false);
+      return;
+    }
+
+    // Organizer accounts are NOT allowed
+    // to use Player Login.
+    if (organizer) {
+      await supabase.auth.signOut();
+
+      setMessage(
+        "This is an organizer account. Please use Organizer Login."
+      );
+
+      setLoading(false);
+      return;
+    }
+
+    // ==========================================
+    // PLAYER PROFILE CHECK
+    // ==========================================
+
+    const {
+      data: profile,
+      error: profileError,
+    } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error(
+        "Player profile check error:",
+        profileError
+      );
+
+      await supabase.auth.signOut();
+
+      setMessage(
+        "Unable to verify your player profile. Please try again."
+      );
+
+      setLoading(false);
+      return;
+    }
+
+    // No player profile means this is not
+    // a valid player account.
+    if (!profile) {
+      await supabase.auth.signOut();
+
+      setMessage(
+        "No player profile found. Please use the correct login."
+      );
+
+      setLoading(false);
+      return;
+    }
+
+    // ==========================================
+    // VALID PLAYER ACCOUNT
+    // ==========================================
+
+    setMessage("Login successful! Redirecting...");
+
+    setTimeout(() => {
+      router.push("/dashboard");
+    }, 1000);
   }
 
   return (

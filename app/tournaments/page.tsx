@@ -91,10 +91,13 @@ export default function TournamentsPage() {
   }, []);
 
   async function loadTournaments() {
-    const { data: tournamentData, error: tournamentError } = await supabase
-      .from("tournaments")
-      .select("*")
-      .order("start_time", { ascending: true });
+const { data: tournamentData, error: tournamentError } = await supabase
+  .from("tournaments")
+  .select(
+    "id, title, game, entry_fee, prize_pool, max_players, start_time, end_time, status"
+  )
+  .eq("is_private", false)
+  .order("start_time", { ascending: true });
 
     if (tournamentError) {
       console.error("Tournament loading error:", tournamentError);

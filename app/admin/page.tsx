@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 type Tournament = {
-    registration_status?: string;
+  registration_status?: string;
+  is_private?: boolean;
+  access_number?: string | null;
+  access_password?: string | null;
   id: string;
   title: string;
   game: string;
@@ -21,77 +24,26 @@ type Tournament = {
 export default function AdminPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [tournamentFilter, setTournamentFilter] = useState("all");
   const [tournamentSearch, setTournamentSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+
   const [playerSearch, setPlayerSearch] = useState("");
-  const [resultTournamentId, setResultTournamentId] = useState("");
-const [resultPlayerId, setResultPlayerId] = useState("");
-const [resultPosition, setResultPosition] = useState("1");
-const [resultPrize, setResultPrize] = useState("");
-const [savingResult, setSavingResult] = useState(false);
-const tournamentsPerPage = 5;
-const filteredTournaments = tournaments.filter((tournament) => {
-  if (tournamentFilter !== "all") {
-    const status = getTournamentStatus(
-      tournament.start_time,
-      tournament.end_time
-    );
-
-    if (status !== tournamentFilter) {
-      return false;
-    }
-  }
-
-  const search = tournamentSearch.toLowerCase().trim();
-
-  if (!search) return true;
-
-  return (
-    tournament.title.toLowerCase().includes(search) ||
-    tournament.game.toLowerCase().includes(search)
-  );
-});
-
-const totalPages = Math.ceil(
-  filteredTournaments.length / tournamentsPerPage
-);
-
-const paginatedTournaments = filteredTournaments.slice(
-  (currentPage - 1) * tournamentsPerPage,
-  currentPage * tournamentsPerPage
-);
-  const [playerCounts, setPlayerCounts] = useState<Record<string, number>>({});
-  const totalPlayers = Object.values(playerCounts).reduce(
-  (total, count) => total + count,
-  0
-);
-
-const liveTournaments = tournaments.filter(
-  (tournament) =>
-    getTournamentStatus(
-      tournament.start_time,
-      tournament.end_time
-    ) === "LIVE"
-).length;
-
-const upcomingTournaments = tournaments.filter(
-  (tournament) =>
-    getTournamentStatus(
-      tournament.start_time,
-      tournament.end_time
-    ) === "UPCOMING"
-).length;
   const [players, setPlayers] = useState<any[]>([]);
-const [loadingPlayers, setLoadingPlayers] = useState(false);
+  const [loadingPlayers, setLoadingPlayers] = useState(false);
   const [loadingTournaments, setLoadingTournaments] = useState(true);
+
+  const [playerCounts, setPlayerCounts] = useState<Record<string, number>>(
+    {}
+  );
 
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState("");
 
   const [editingId, setEditingId] = useState<string | null>(null);
-const [savingEdit, setSavingEdit] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const [title, setTitle] = useState("");
   const [game, setGame] = useState("BGMI");
@@ -100,63 +52,134 @@ const [savingEdit, setSavingEdit] = useState(false);
   const [maxPlayers, setMaxPlayers] = useState("100");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+
   const [roomId, setRoomId] = useState("");
   const [roomPassword, setRoomPassword] = useState("");
+
   const [registrationStatus, setRegistrationStatus] =
-  useState("open");
+    useState("open");
+
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [accessNumber, setAccessNumber] = useState("");
+  const [accessPassword, setAccessPassword] = useState("");
+
+  const [resultTournamentId, setResultTournamentId] = useState("");
+  const [resultPlayerId, setResultPlayerId] = useState("");
+  const [resultPosition, setResultPosition] = useState("1");
+  const [resultPrize, setResultPrize] = useState("");
+  const [savingResult, setSavingResult] = useState(false);
+
+  const tournamentsPerPage = 5;
+
+  const filteredTournaments = tournaments.filter((tournament) => {
+    if (tournamentFilter !== "all") {
+      const status = getTournamentStatus(
+        tournament.start_time,
+        tournament.end_time
+      );
+
+      if (status !== tournamentFilter) {
+        return false;
+      }
+    }
+
+    const search = tournamentSearch.toLowerCase().trim();
+
+    if (!search) return true;
+
+    return (
+      tournament.title.toLowerCase().includes(search) ||
+      tournament.game.toLowerCase().includes(search)
+    );
+  });
+
+  const totalPages = Math.ceil(
+    filteredTournaments.length / tournamentsPerPage
+  );
+
+  const paginatedTournaments = filteredTournaments.slice(
+    (currentPage - 1) * tournamentsPerPage,
+    currentPage * tournamentsPerPage
+  );
+
+  const totalPlayers = Object.values(playerCounts).reduce(
+    (total, count) => total + count,
+    0
+  );
+
+  const liveTournaments = tournaments.filter(
+    (tournament) =>
+      getTournamentStatus(
+        tournament.start_time,
+        tournament.end_time
+      ) === "LIVE"
+  ).length;
+
+  const upcomingTournaments = tournaments.filter(
+    (tournament) =>
+      getTournamentStatus(
+        tournament.start_time,
+        tournament.end_time
+      ) === "UPCOMING"
+  ).length;
 
   useEffect(() => {
-async function checkUser() {
-  const { data } = await supabase.auth.getUser();
+    async function checkUser() {
+      const { data } = await supabase.auth.getUser();
 
-  if (!data.user) {
-    window.location.href = "/login";
-    return;
-  }
+      if (!data.user) {
+        window.location.href = "/login";
+        return;
+      }
 
-  const ADMIN_USER_ID = "6431960a-b0c6-4e2a-8b1a-d5017ceae103";
+      const ADMIN_USER_ID =
+        "6431960a-b0c6-4e2a-8b1a-d5017ceae103";
 
-  if (data.user.id !== ADMIN_USER_ID) {
-    window.location.href = "/";
-    return;
-  }
+      if (data.user.id !== ADMIN_USER_ID) {
+        window.location.href = "/";
+        return;
+      }
 
-  setUser(data.user);
-  setLoading(false);
+      setUser(data.user);
+      setLoading(false);
 
-  loadTournaments();
-  loadPlayers();
-}
+      loadTournaments();
+      loadPlayers();
+    }
+
     checkUser();
   }, []);
 
- async function loadTournaments() {
-  setLoadingTournaments(true);
+  async function loadTournaments() {
+    setLoadingTournaments(true);
 
-  const { data, error } = await supabase
-    .from("tournaments")
-    .select("*")
-    .order("start_time", { ascending: true });
+    const { data, error } = await supabase
+      .from("tournaments")
+      .select("*")
+      .order("start_time", { ascending: true });
 
-if (!error && data) {
-  setTournaments(data);
+    if (!error && data) {
+      setTournaments(data);
 
-  const counts: Record<string, number> = {};
+      const counts: Record<string, number> = {};
 
-  for (const tournament of data) {
-    const { count } = await supabase
-      .from("tournament_players")
-      .select("*", { count: "exact", head: true })
-      .eq("tournament_id", tournament.id);
+      for (const tournament of data) {
+        const { count } = await supabase
+          .from("tournament_players")
+          .select("*", {
+            count: "exact",
+            head: true,
+          })
+          .eq("tournament_id", tournament.id);
 
-    counts[tournament.id] = count || 0;
+        counts[tournament.id] = count || 0;
+      }
+
+      setPlayerCounts(counts);
+    }
+
+    setLoadingTournaments(false);
   }
-
-  setPlayerCounts(counts);
-}
-
-  setLoadingTournaments(false);
-}
 
   function getTournamentStatus(
     startTime: string,
@@ -170,37 +193,71 @@ if (!error && data) {
     if (now < end) return "LIVE";
     return "COMPLETED";
   }
+
   async function loadPlayers() {
-  setLoadingPlayers(true);
+    setLoadingPlayers(true);
 
-  const { data, error } = await supabase
-    .from("tournament_players")
-.select(`
-  id,
-  player_id,
-  username,
-  game_id,
-  joined_at,
-  tournament_id,
-  tournaments (
-    title,
-    game
-  )
-`)
-    .order("joined_at", { ascending: false });
+    const { data, error } = await supabase
+      .from("tournament_players")
+      .select(`
+        id,
+        player_id,
+        username,
+        game_id,
+        joined_at,
+        tournament_id,
+        tournaments (
+          title,
+          game
+        )
+      `)
+      .order("joined_at", {
+        ascending: false,
+      });
 
-  if (!error && data) {
-    setPlayers(data);
+    if (!error && data) {
+      setPlayers(data);
+    }
+
+    setLoadingPlayers(false);
   }
 
-  setLoadingPlayers(false);
-}
+  function generateAccessNumber() {
+    return Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
+  }
 
-  async function createTournament(e: React.FormEvent) {
+  function generateAccessPassword() {
+    const characters =
+      "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+
+    let password = "";
+
+    for (let i = 0; i < 8; i++) {
+      password += characters.charAt(
+        Math.floor(Math.random() * characters.length)
+      );
+    }
+
+    return password;
+  }
+
+  async function createTournament(
+    e: React.FormEvent
+  ) {
     e.preventDefault();
 
     setCreating(true);
     setMessage("");
+
+    const finalAccessNumber = isPrivate
+      ? accessNumber || generateAccessNumber()
+      : null;
+
+    const finalAccessPassword = isPrivate
+      ? accessPassword || generateAccessPassword()
+      : null;
 
     const { data: tournament, error } = await supabase
       .from("tournaments")
@@ -212,10 +269,13 @@ if (!error && data) {
         max_players: Number(maxPlayers),
         start_time: new Date(startTime).toISOString(),
         end_time: new Date(endTime).toISOString(),
-status: "upcoming",
-registration_status: registrationStatus,
-room_id: roomId,
-room_password: roomPassword,
+        status: "upcoming",
+        registration_status: registrationStatus,
+        room_id: roomId,
+        room_password: roomPassword,
+        is_private: isPrivate,
+        access_number: finalAccessNumber,
+        access_password: finalAccessPassword,
       })
       .select()
       .single();
@@ -240,12 +300,17 @@ room_password: roomPassword,
           "Tournament created, but room details could not be saved: " +
             roomError.message
         );
+
         setCreating(false);
         return;
       }
     }
 
-    setMessage("Tournament created successfully!");
+    setMessage(
+      isPrivate
+        ? "Private tournament created successfully!"
+        : "Tournament created successfully!"
+    );
 
     setTitle("");
     setGame("BGMI");
@@ -257,6 +322,10 @@ room_password: roomPassword,
     setRoomId("");
     setRoomPassword("");
     setRegistrationStatus("open");
+
+    setIsPrivate(false);
+    setAccessNumber("");
+    setAccessPassword("");
 
     await loadTournaments();
 
@@ -280,119 +349,182 @@ room_password: roomPassword,
       return;
     }
 
-    setMessage("Tournament deleted successfully.");
+    setMessage(
+      "Tournament deleted successfully."
+    );
 
     await loadTournaments();
   }
-function startEditing(tournament: Tournament) {
-  setEditingId(tournament.id);
 
-  setTitle(tournament.title);
-  setGame(tournament.game);
-  setEntryFee(String(tournament.entry_fee));
-  setPrizePool(String(tournament.prize_pool));
-  setMaxPlayers(String(tournament.max_players));
+  function startEditing(tournament: Tournament) {
+    setEditingId(tournament.id);
 
-  const start = new Date(tournament.start_time);
-  const end = new Date(tournament.end_time);
+    setTitle(tournament.title);
+    setGame(tournament.game);
+    setEntryFee(String(tournament.entry_fee));
+    setPrizePool(String(tournament.prize_pool));
+    setMaxPlayers(String(tournament.max_players));
 
-  setStartTime(
-    new Date(start.getTime() - start.getTimezoneOffset() * 60000)
-      .toISOString()
-      .slice(0, 16)
-  );
+    const start = new Date(tournament.start_time);
+    const end = new Date(tournament.end_time);
 
-  setEndTime(
-    new Date(end.getTime() - end.getTimezoneOffset() * 60000)
-      .toISOString()
-      .slice(0, 16)
-  );
+    setStartTime(
+      new Date(
+        start.getTime() -
+          start.getTimezoneOffset() * 60000
+      )
+        .toISOString()
+        .slice(0, 16)
+    );
 
- setRoomId(tournament.room_id || "");
-setRoomPassword(tournament.room_password || "");
-setRegistrationStatus(tournament.registration_status || "open");
+    setEndTime(
+      new Date(
+        end.getTime() -
+          end.getTimezoneOffset() * 60000
+      )
+        .toISOString()
+        .slice(0, 16)
+    );
 
-window.scrollTo({
-    top: 0,
-    behavior: "smooth",
-  });
-}
-async function saveTournament(e: React.FormEvent) {
-  e.preventDefault();
+    setRoomId(tournament.room_id || "");
+    setRoomPassword(
+      tournament.room_password || ""
+    );
 
-  if (!editingId) return;
+    setRegistrationStatus(
+      tournament.registration_status || "open"
+    );
 
-  setSavingEdit(true);
-  setMessage("");
+    setIsPrivate(
+      tournament.is_private || false
+    );
 
-  const { data: updatedTournament, error } = await supabase
-    .from("tournaments")
-    .update({
-      title,
-      game,
-      entry_fee: Number(entryFee),
-      prize_pool: Number(prizePool),
-      max_players: Number(maxPlayers),
-      start_time: new Date(startTime).toISOString(),
-      end_time: new Date(endTime).toISOString(),
-      registration_status: registrationStatus,
-      room_id: roomId,
-      room_password: roomPassword,
-    })
-    .eq("id", editingId)
-    .select("registration_status")
-    .single();
+    setAccessNumber(
+      tournament.access_number || ""
+    );
 
-  if (error) {
-    setMessage(error.message);
-    setSavingEdit(false);
-    return;
+    setAccessPassword(
+      tournament.access_password || ""
+    );
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   }
 
-  if (roomId && roomPassword) {
-    const { data: existingRoom } = await supabase
-      .from("tournament_rooms")
-      .select("id")
-      .eq("tournament_id", editingId)
-      .maybeSingle();
+  async function saveTournament(
+    e: React.FormEvent
+  ) {
+    e.preventDefault();
 
-    if (existingRoom) {
-      await supabase
-        .from("tournament_rooms")
-        .update({
-          room_id: roomId,
-          room_password: roomPassword,
-        })
-        .eq("tournament_id", editingId);
-    } else {
-      await supabase
-        .from("tournament_rooms")
-        .insert({
-          tournament_id: editingId,
-          room_id: roomId,
-          room_password: roomPassword,
-        });
+    if (!editingId) return;
+
+    setSavingEdit(true);
+    setMessage("");
+
+    const finalAccessNumber = isPrivate
+      ? accessNumber || generateAccessNumber()
+      : null;
+
+    const finalAccessPassword = isPrivate
+      ? accessPassword || generateAccessPassword()
+      : null;
+
+    const {
+      data: updatedTournament,
+      error,
+    } = await supabase
+      .from("tournaments")
+      .update({
+        title,
+        game,
+        entry_fee: Number(entryFee),
+        prize_pool: Number(prizePool),
+        max_players: Number(maxPlayers),
+        start_time: new Date(startTime).toISOString(),
+        end_time: new Date(endTime).toISOString(),
+        registration_status: registrationStatus,
+        room_id: roomId,
+        room_password: roomPassword,
+        is_private: isPrivate,
+        access_number: finalAccessNumber,
+        access_password: finalAccessPassword,
+      })
+      .eq("id", editingId)
+.select(
+  "registration_status, is_private, access_number, access_password"
+)
+.maybeSingle();
+    if (error) {
+      setMessage(error.message);
+      setSavingEdit(false);
+      return;
     }
+
+    if (roomId && roomPassword) {
+      const { data: existingRoom } =
+        await supabase
+          .from("tournament_rooms")
+          .select("id")
+          .eq(
+            "tournament_id",
+            editingId
+          )
+          .maybeSingle();
+
+      if (existingRoom) {
+        await supabase
+          .from("tournament_rooms")
+          .update({
+            room_id: roomId,
+            room_password: roomPassword,
+          })
+          .eq(
+            "tournament_id",
+            editingId
+          );
+      } else {
+        await supabase
+          .from("tournament_rooms")
+          .insert({
+            tournament_id: editingId,
+            room_id: roomId,
+            room_password: roomPassword,
+          });
+      }
+    }
+
+    setRegistrationStatus(
+      updatedTournament?.registration_status ||
+        "open"
+    );
+
+    setIsPrivate(
+      updatedTournament?.is_private || false
+    );
+
+    setAccessNumber(
+      updatedTournament?.access_number || ""
+    );
+
+    setAccessPassword(
+      updatedTournament?.access_password || ""
+    );
+
+    setMessage(
+      `Tournament updated successfully! Registration: ${
+        updatedTournament?.registration_status ||
+        "open"
+      }`
+    );
+
+    setEditingId(null);
+
+    await loadTournaments();
+
+    setSavingEdit(false);
   }
-
-  setRegistrationStatus(
-    updatedTournament?.registration_status || "open"
-  );
-
-  setMessage(
-    `Tournament updated successfully! Registration: ${
-      updatedTournament?.registration_status || "open"
-    }`
-  );
-
-  setEditingId(null);
-
-  await loadTournaments();
-
-  setSavingEdit(false);
-}
-
-  
 
   if (loading) {
     return (
@@ -406,7 +538,9 @@ async function saveTournament(e: React.FormEvent) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
         <div className="text-center">
-          <h1 className="text-3xl font-black">Admin Access</h1>
+          <h1 className="text-3xl font-black">
+            Admin Access
+          </h1>
 
           <p className="mt-3 text-gray-400">
             Please login to access the admin dashboard.
@@ -447,48 +581,48 @@ async function saveTournament(e: React.FormEvent) {
         <h1 className="text-4xl font-black">
           Admin Dashboard
         </h1>
-        {/* Admin Statistics */}
-<div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-  <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-    <p className="text-sm text-gray-400">
-      Total Tournaments
-    </p>
 
-    <p className="mt-2 text-3xl font-black">
-      {tournaments.length}
-    </p>
-  </div>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p className="text-sm text-gray-400">
+              Total Tournaments
+            </p>
 
-  <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-    <p className="text-sm text-gray-400">
-      Total Registered Players
-    </p>
+            <p className="mt-2 text-3xl font-black">
+              {tournaments.length}
+            </p>
+          </div>
 
-    <p className="mt-2 text-3xl font-black">
-      {totalPlayers}
-    </p>
-  </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p className="text-sm text-gray-400">
+              Total Registered Players
+            </p>
 
-  <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-    <p className="text-sm text-gray-400">
-      Live Tournaments
-    </p>
+            <p className="mt-2 text-3xl font-black">
+              {totalPlayers}
+            </p>
+          </div>
 
-    <p className="mt-2 text-3xl font-black">
-      {liveTournaments}
-    </p>
-  </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p className="text-sm text-gray-400">
+              Live Tournaments
+            </p>
 
-  <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-    <p className="text-sm text-gray-400">
-      Upcoming Tournaments
-    </p>
+            <p className="mt-2 text-3xl font-black">
+              {liveTournaments}
+            </p>
+          </div>
 
-    <p className="mt-2 text-3xl font-black">
-      {upcomingTournaments}
-    </p>
-  </div>
-</div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+            <p className="text-sm text-gray-400">
+              Upcoming Tournaments
+            </p>
+
+            <p className="mt-2 text-3xl font-black">
+              {upcomingTournaments}
+            </p>
+          </div>
+        </div>
 
         <p className="mt-3 text-gray-400">
           Create and manage GameArena tournaments.
@@ -497,11 +631,17 @@ async function saveTournament(e: React.FormEvent) {
         {/* Create Tournament */}
         <div className="mt-10">
           <h2 className="text-2xl font-black">
-            Create Tournament
+            {editingId
+              ? "Edit Tournament"
+              : "Create Tournament"}
           </h2>
 
           <form
-            onSubmit={editingId ? saveTournament : createTournament}
+            onSubmit={
+              editingId
+                ? saveTournament
+                : createTournament
+            }
             className="mt-6 space-y-6 rounded-2xl border border-white/10 bg-white/5 p-6"
           >
             <div>
@@ -512,7 +652,9 @@ async function saveTournament(e: React.FormEvent) {
               <input
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) =>
+                  setTitle(e.target.value)
+                }
                 placeholder="GameArena Battle #2"
                 required
                 className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-green-400"
@@ -526,15 +668,26 @@ async function saveTournament(e: React.FormEvent) {
 
               <select
                 value={game}
-                onChange={(e) => setGame(e.target.value)}
+                onChange={(e) =>
+                  setGame(e.target.value)
+                }
                 className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-green-400"
               >
-                <option value="BGMI">BGMI</option>
-                <option value="Free Fire">Free Fire</option>
+                <option value="BGMI">
+                  BGMI
+                </option>
+
+                <option value="Free Fire">
+                  Free Fire
+                </option>
+
                 <option value="Call of Duty Mobile">
                   Call of Duty Mobile
                 </option>
-                <option value="Valorant">Valorant</option>
+
+                <option value="Valorant">
+                  Valorant
+                </option>
               </select>
             </div>
 
@@ -548,7 +701,9 @@ async function saveTournament(e: React.FormEvent) {
                   type="number"
                   min="0"
                   value={entryFee}
-                  onChange={(e) => setEntryFee(e.target.value)}
+                  onChange={(e) =>
+                    setEntryFee(e.target.value)
+                  }
                   placeholder="50"
                   required
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-green-400"
@@ -564,7 +719,9 @@ async function saveTournament(e: React.FormEvent) {
                   type="number"
                   min="0"
                   value={prizePool}
-                  onChange={(e) => setPrizePool(e.target.value)}
+                  onChange={(e) =>
+                    setPrizePool(e.target.value)
+                  }
                   placeholder="5000"
                   required
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-green-400"
@@ -581,7 +738,9 @@ async function saveTournament(e: React.FormEvent) {
                 type="number"
                 min="1"
                 value={maxPlayers}
-                onChange={(e) => setMaxPlayers(e.target.value)}
+                onChange={(e) =>
+                  setMaxPlayers(e.target.value)
+                }
                 required
                 className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-green-400"
               />
@@ -596,7 +755,9 @@ async function saveTournament(e: React.FormEvent) {
                 <input
                   type="datetime-local"
                   value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
+                  onChange={(e) =>
+                    setStartTime(e.target.value)
+                  }
                   required
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-green-400"
                 />
@@ -610,13 +771,113 @@ async function saveTournament(e: React.FormEvent) {
                 <input
                   type="datetime-local"
                   value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
+                  onChange={(e) =>
+                    setEndTime(e.target.value)
+                  }
                   required
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-green-400"
                 />
               </div>
             </div>
 
+            {/* Tournament Access */}
+            <div className="border-t border-white/10 pt-6">
+              <h3 className="text-xl font-bold">
+                Tournament Access
+              </h3>
+
+              <p className="mt-2 text-sm text-gray-400">
+                Choose whether this tournament is
+                public or private.
+              </p>
+
+              <div className="mt-5">
+                <label className="text-sm font-semibold text-gray-300">
+                  Tournament Type
+                </label>
+
+                <select
+                  value={
+                    isPrivate
+                      ? "private"
+                      : "public"
+                  }
+                  onChange={(e) => {
+                    const privateTournament =
+                      e.target.value ===
+                      "private";
+
+                    setIsPrivate(
+                      privateTournament
+                    );
+
+                    if (
+                      privateTournament
+                    ) {
+                      setAccessNumber(
+                        generateAccessNumber()
+                      );
+
+                      setAccessPassword(
+                        generateAccessPassword()
+                      );
+                    } else {
+                      setAccessNumber("");
+                      setAccessPassword("");
+                    }
+                  }}
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-green-400"
+                >
+                  <option value="public">
+                    Public Tournament
+                  </option>
+
+                  <option value="private">
+                    Private Tournament
+                  </option>
+                </select>
+              </div>
+
+              {isPrivate && (
+                <>
+                  <div className="mt-5 grid gap-6 md:grid-cols-2">
+                    <div>
+                      <label className="text-sm font-semibold text-gray-300">
+                        Tournament Number
+                      </label>
+
+                      <input
+                        type="text"
+                        value={accessNumber}
+                        readOnly
+                        className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 font-bold tracking-widest text-green-400 outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-semibold text-gray-300">
+                        Tournament Password
+                      </label>
+
+                      <input
+                        type="text"
+                        value={accessPassword}
+                        readOnly
+                        className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 font-bold tracking-widest text-green-400 outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <p className="mt-4 rounded-xl border border-yellow-400/20 bg-yellow-400/10 p-4 text-sm text-yellow-300">
+                    Give this Tournament Number
+                    and Password only to the
+                    participants you want to allow.
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* Game Room */}
             <div className="border-t border-white/10 pt-6">
               <h3 className="text-xl font-bold">
                 Game Room
@@ -631,7 +892,9 @@ async function saveTournament(e: React.FormEvent) {
                   <input
                     type="text"
                     value={roomId}
-                    onChange={(e) => setRoomId(e.target.value)}
+                    onChange={(e) =>
+                      setRoomId(e.target.value)
+                    }
                     placeholder="12345678"
                     className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-green-400"
                   />
@@ -645,30 +908,45 @@ async function saveTournament(e: React.FormEvent) {
                   <input
                     type="text"
                     value={roomPassword}
-                    onChange={(e) => setRoomPassword(e.target.value)}
+                    onChange={(e) =>
+                      setRoomPassword(
+                        e.target.value
+                      )
+                    }
                     placeholder="GAME123"
                     className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-green-400"
                   />
                 </div>
+
                 <div>
-  <label className="mb-2 block text-sm font-bold text-gray-300">
-    Registration Status
-  </label>
+                  <label className="mb-2 block text-sm font-bold text-gray-300">
+                    Registration Status
+                  </label>
 
-  <select
-    value={registrationStatus}
-    onChange={(e) => setRegistrationStatus(e.target.value)}
-    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none"
-  >
-    <option value="open" className="bg-gray-900">
-      Open
-    </option>
+                  <select
+                    value={registrationStatus}
+                    onChange={(e) =>
+                      setRegistrationStatus(
+                        e.target.value
+                      )
+                    }
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none"
+                  >
+                    <option
+                      value="open"
+                      className="bg-gray-900"
+                    >
+                      Open
+                    </option>
 
-    <option value="closed" className="bg-gray-900">
-      Closed
-    </option>
-  </select>
-</div>
+                    <option
+                      value="closed"
+                      className="bg-gray-900"
+                    >
+                      Closed
+                    </option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -678,19 +956,49 @@ async function saveTournament(e: React.FormEvent) {
               </div>
             )}
 
-<button
-  type="submit"
-  disabled={creating || savingEdit}
+            <button
+              type="submit"
+              disabled={
+                creating || savingEdit
+              }
               className="w-full rounded-xl bg-green-500 px-6 py-4 font-black text-black transition hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
-{editingId
-  ? savingEdit
-    ? "Saving Changes..."
-    : "Save Changes"
-  : creating
-  ? "Creating Tournament..."
-  : "Create Tournament"}
+              {editingId
+                ? savingEdit
+                  ? "Saving Changes..."
+                  : "Save Changes"
+                : creating
+                ? "Creating Tournament..."
+                : "Create Tournament"}
             </button>
+
+            {editingId && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingId(null);
+                  setTitle("");
+                  setGame("BGMI");
+                  setEntryFee("");
+                  setPrizePool("");
+                  setMaxPlayers("100");
+                  setStartTime("");
+                  setEndTime("");
+                  setRoomId("");
+                  setRoomPassword("");
+                  setRegistrationStatus(
+                    "open"
+                  );
+                  setIsPrivate(false);
+                  setAccessNumber("");
+                  setAccessPassword("");
+                  setMessage("");
+                }}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-6 py-4 font-bold text-white transition hover:bg-white/10"
+              >
+                Cancel Edit
+              </button>
+            )}
           </form>
         </div>
 
@@ -699,36 +1007,61 @@ async function saveTournament(e: React.FormEvent) {
           <h2 className="text-2xl font-black">
             Manage Tournaments
           </h2>
+
           <div className="mt-5">
-  <input
-    type="text"
-    value={tournamentSearch}
-    onChange={(e) => setTournamentSearch(e.target.value)}
-    placeholder="Search tournaments..."
-    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-gray-500 focus:border-green-400"
-  />
-</div>
+            <input
+              type="text"
+              value={tournamentSearch}
+              onChange={(e) => {
+                setTournamentSearch(
+                  e.target.value
+                );
+                setCurrentPage(1);
+              }}
+              placeholder="Search tournaments..."
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-gray-500 focus:border-green-400"
+            />
+          </div>
+
           <div className="mt-5 flex flex-wrap gap-3">
-  {[
-    { value: "all", label: "All" },
-    { value: "UPCOMING", label: "Upcoming" },
-    { value: "LIVE", label: "Live" },
-    { value: "COMPLETED", label: "Completed" },
-  ].map((filter) => (
-    <button
-      key={filter.value}
-      type="button"
-      onClick={() => setTournamentFilter(filter.value)}
-      className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
-        tournamentFilter === filter.value
-          ? "bg-green-400 text-black"
-          : "border border-white/10 bg-white/5 text-gray-300 hover:border-green-400/40"
-      }`}
-    >
-      {filter.label}
-    </button>
-  ))}
-</div>
+            {[
+              {
+                value: "all",
+                label: "All",
+              },
+              {
+                value: "UPCOMING",
+                label: "Upcoming",
+              },
+              {
+                value: "LIVE",
+                label: "Live",
+              },
+              {
+                value: "COMPLETED",
+                label: "Completed",
+              },
+            ].map((filter) => (
+              <button
+                key={filter.value}
+                type="button"
+                onClick={() => {
+                  setTournamentFilter(
+                    filter.value
+                  );
+                  setCurrentPage(1);
+                }}
+                className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
+                  tournamentFilter ===
+                  filter.value
+                    ? "bg-green-400 text-black"
+                    : "border border-white/10 bg-white/5 text-gray-300 hover:border-green-400/40"
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
 
           {loadingTournaments ? (
             <p className="mt-6 text-gray-400">
@@ -739,480 +1072,704 @@ async function saveTournament(e: React.FormEvent) {
               No tournaments found.
             </p>
           ) : (
-        
-            
             <div className="mt-6 space-y-5">
-        
-{paginatedTournaments.map((tournament) => {
-                const status = getTournamentStatus(
-                  tournament.start_time,
-                  tournament.end_time
-                );
+              {paginatedTournaments.map(
+                (tournament) => {
+                  const status =
+                    getTournamentStatus(
+                      tournament.start_time,
+                      tournament.end_time
+                    );
 
-                return (
-                  <div
-                    key={tournament.id}
-                    className="rounded-2xl border border-white/10 bg-white/5 p-6"
-                  >
-                    <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-3">
-                          <h3 className="text-xl font-black">
-                            {tournament.title}
-                          </h3>
+                  return (
+                    <div
+                      key={tournament.id}
+                      className="rounded-2xl border border-white/10 bg-white/5 p-6"
+                    >
+                      <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <h3 className="text-xl font-black">
+                              {tournament.title}
+                            </h3>
 
-                          <span
-                            className={`rounded-full px-3 py-1 text-xs font-black ${
-                              status === "LIVE"
-                                ? "bg-green-400/10 text-green-400"
-                                : status === "UPCOMING"
-                                ? "bg-yellow-400/10 text-yellow-400"
-                                : "bg-gray-400/10 text-gray-400"
-                            }`}
-                          >
-                            {status}
-                          </span>
+                            <span
+                              className={`rounded-full px-3 py-1 text-xs font-black ${
+                                status ===
+                                "LIVE"
+                                  ? "bg-green-400/10 text-green-400"
+                                  : status ===
+                                    "UPCOMING"
+                                  ? "bg-yellow-400/10 text-yellow-400"
+                                  : "bg-gray-400/10 text-gray-400"
+                              }`}
+                            >
+                              {status}
+                            </span>
+
+                            {tournament.is_private && (
+                              <span className="rounded-full bg-purple-400/10 px-3 py-1 text-xs font-black text-purple-400">
+                                PRIVATE
+                              </span>
+                            )}
+                          </div>
+
+                          <p className="mt-2 text-sm text-gray-400">
+                            {tournament.game}
+                          </p>
                         </div>
 
-                        <p className="mt-2 text-sm text-gray-400">
-                          {tournament.game}
-                        </p>
+                        <div className="flex flex-wrap gap-3">
+                          <button
+                            onClick={() =>
+                              startEditing(
+                                tournament
+                              )
+                            }
+                            className="rounded-xl bg-blue-500/10 px-4 py-2 text-sm font-bold text-blue-400 hover:bg-blue-500/20"
+                          >
+                            Edit
+                          </button>
+
+                          <a
+                            href={`/tournaments/${tournament.id}`}
+                            className="rounded-xl border border-white/10 px-4 py-2 text-sm font-bold text-white no-underline hover:bg-white/10"
+                          >
+                            View
+                          </a>
+
+                          <button
+                            onClick={() =>
+                              deleteTournament(
+                                tournament.id
+                              )
+                            }
+                            className="rounded-xl bg-red-500/10 px-4 py-2 text-sm font-bold text-red-400 hover:bg-red-500/20"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
 
-                      <div className="flex gap-3">
-                        <button
-  onClick={() => startEditing(tournament)}
-  className="rounded-xl bg-blue-500/10 px-4 py-2 text-sm font-bold text-blue-400 hover:bg-blue-500/20"
->
-  Edit
-</button>
-                        <a
-                          href={`/tournaments/${tournament.id}`}
-                          className="rounded-xl border border-white/10 px-4 py-2 text-sm font-bold text-white no-underline hover:bg-white/10"
-                        >
-                          View
-                        </a>
+                      {tournament.is_private && (
+                        <div className="mt-5 rounded-xl border border-purple-400/20 bg-purple-400/10 p-4">
+                          <p className="text-xs font-bold uppercase tracking-wider text-purple-300">
+                            Private Access
+                          </p>
 
-                        <button
-                          onClick={() =>
-                            deleteTournament(tournament.id)
-                          }
-                          className="rounded-xl bg-red-500/10 px-4 py-2 text-sm font-bold text-red-400 hover:bg-red-500/20"
-                        >
-                          Delete
-                        </button>
+                          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                            <div>
+                              <p className="text-xs text-gray-400">
+                                Tournament Number
+                              </p>
+
+                              <p className="mt-1 font-black tracking-widest text-white">
+                                {tournament.access_number ||
+                                  "Not set"}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-gray-400">
+                                Tournament Password
+                              </p>
+
+                              <p className="mt-1 font-black tracking-widest text-white">
+                                {tournament.access_password ||
+                                  "Not set"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-6 grid gap-4 border-t border-white/10 pt-5 sm:grid-cols-2 lg:grid-cols-4">
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Entry Fee
+                          </p>
+
+                          <p className="mt-1 font-bold">
+                            ₹
+                            {
+                              tournament.entry_fee
+                            }
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Prize Pool
+                          </p>
+
+                          <p className="mt-1 font-bold">
+                            ₹
+                            {
+                              tournament.prize_pool
+                            }
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Maximum Players
+                          </p>
+
+                          <p className="mt-1 font-bold">
+                            {
+                              tournament.max_players
+                            }
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Registered Players
+                          </p>
+
+                          <p className="mt-1 font-bold">
+                            {playerCounts[
+                              tournament.id
+                            ] || 0}{" "}
+                            /{" "}
+                            {
+                              tournament.max_players
+                            }
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Spots Remaining
+                          </p>
+
+                          <p className="mt-1 font-bold">
+                            {Math.max(
+                              tournament.max_players -
+                                (playerCounts[
+                                  tournament.id
+                                ] || 0),
+                              0
+                            )}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Registration
+                          </p>
+
+                          <p
+                            className={`mt-1 font-bold ${
+                              tournament.registration_status ===
+                                "closed" ||
+                              (playerCounts[
+                                tournament.id
+                              ] || 0) >=
+                                tournament.max_players
+                                ? "text-red-400"
+                                : "text-green-400"
+                            }`}
+                          >
+                            {tournament.registration_status ===
+                            "closed"
+                              ? "CLOSED"
+                              : (playerCounts[
+                                  tournament.id
+                                ] || 0) >=
+                                tournament.max_players
+                              ? "FULL"
+                              : "OPEN"}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Start
+                          </p>
+
+                          <p className="mt-1 font-bold">
+                            {new Date(
+                              tournament.start_time
+                            ).toLocaleString()}
+                          </p>
+                        </div>
                       </div>
                     </div>
+                  );
+                }
+              )}
 
-                    <div className="mt-6 grid gap-4 border-t border-white/10 pt-5 sm:grid-cols-2 lg:grid-cols-4">
-                      <div>
-                        <p className="text-xs text-gray-500">
-                          Entry Fee
-                        </p>
-
-                        <p className="mt-1 font-bold">
-                          ₹{tournament.entry_fee}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-xs text-gray-500">
-                          Prize Pool
-                        </p>
-
-                        <p className="mt-1 font-bold">
-                          ₹{tournament.prize_pool}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-xs text-gray-500">
-                          Maximum Players
-                        </p>
-
-                        <p className="mt-1 font-bold">
-                          {tournament.max_players}
-                        </p>
-                      </div>
-                      <div>
-  <p className="text-xs text-gray-500">
-    Registered Players
-  </p>
-
-  <p className="mt-1 font-bold">
-    {playerCounts[tournament.id] || 0} / {tournament.max_players}
-  </p>
-</div>
-<div>
-  <p className="text-xs text-gray-500">
-    Spots Remaining
-  </p>
-
-  <p className="mt-1 font-bold">
-    {Math.max(
-      tournament.max_players -
-        (playerCounts[tournament.id] || 0),
-      0
-    )}
-  </p>
-</div>
-<div>
-  <p className="text-xs text-gray-500">
-    Registration
-  </p>
-
-  <p
-    className={`mt-1 font-bold ${
-      tournament.registration_status === "closed" ||
-      (playerCounts[tournament.id] || 0) >=
-        tournament.max_players
-        ? "text-red-400"
-        : "text-green-400"
-    }`}
-  >
-    {tournament.registration_status === "closed"
-      ? "CLOSED"
-      : (playerCounts[tournament.id] || 0) >=
-        tournament.max_players
-      ? "FULL"
-      : "OPEN"}
-  </p>
-</div>
-
-                      <div>
-                        <p className="text-xs text-gray-500">
-                          Start
-                        </p>
-
-                        <p className="mt-1 font-bold">
-                          {new Date(
-                            tournament.start_time
-                          ).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
               {totalPages > 1 && (
-  <div className="mt-6 flex items-center justify-center gap-3">
-    <button
-      type="button"
-      onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-      disabled={currentPage === 1}
-      className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-bold text-white transition hover:border-green-400/40 disabled:cursor-not-allowed disabled:opacity-40"
-    >
-      Previous
-    </button>
+                <div className="mt-6 flex items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentPage(
+                        (page) =>
+                          Math.max(
+                            1,
+                            page - 1
+                          )
+                      )
+                    }
+                    disabled={
+                      currentPage === 1
+                    }
+                    className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-bold text-white transition hover:border-green-400/40 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Previous
+                  </button>
 
-    <span className="px-3 text-sm font-bold text-gray-400">
-      Page {currentPage} of {totalPages}
-    </span>
+                  <span className="px-3 text-sm font-bold text-gray-400">
+                    Page {currentPage} of{" "}
+                    {totalPages}
+                  </span>
 
-    <button
-      type="button"
-      onClick={() =>
-        setCurrentPage((page) => Math.min(totalPages, page + 1))
-      }
-      disabled={currentPage === totalPages}
-      className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-bold text-white transition hover:border-green-400/40 disabled:cursor-not-allowed disabled:opacity-40"
-    >
-      Next
-    </button>
-  </div>
-)}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentPage(
+                        (page) =>
+                          Math.min(
+                            totalPages,
+                            page + 1
+                          )
+                      )
+                    }
+                    disabled={
+                      currentPage ===
+                      totalPages
+                    }
+                    className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-bold text-white transition hover:border-green-400/40 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
+
         {/* Tournament Results */}
-<div className="mt-16">
-  <h2 className="text-2xl font-black">
-    Tournament Results
-  </h2>
+        <div className="mt-16">
+          <h2 className="text-2xl font-black">
+            Tournament Results
+          </h2>
 
-  <p className="mt-2 text-gray-400">
-    Add winners and prizes for completed tournaments.
-  </p>
+          <p className="mt-2 text-gray-400">
+            Add winners and prizes for completed
+            tournaments.
+          </p>
 
-  <form
-    onSubmit={async (e) => {
-      e.preventDefault();
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
 
-      if (
-        !resultTournamentId ||
-        !resultPlayerId ||
-        !resultPosition
-      ) {
-        setMessage("Please select tournament, player and position.");
-        return;
-      }
+              if (
+                !resultTournamentId ||
+                !resultPlayerId ||
+                !resultPosition
+              ) {
+                setMessage(
+                  "Please select tournament, player and position."
+                );
+                return;
+              }
 
-      setSavingResult(true);
-      setMessage("");
+              setSavingResult(true);
+              setMessage("");
 
-  const selectedPlayer = players.find(
-  (player) => player.player_id === resultPlayerId
+              const selectedPlayer =
+                players.find(
+                  (player) =>
+                    player.player_id ===
+                    resultPlayerId
+                );
+
+              if (!selectedPlayer) {
+                setMessage(
+                  "Player not found."
+                );
+                setSavingResult(false);
+                return;
+              }
+
+             const { data: insertedResult, error } =
+  await supabase
+    .from("tournament_results")
+    .insert({
+      tournament_id: resultTournamentId,
+      player_id: selectedPlayer.player_id,
+      username: selectedPlayer.username,
+      position: Number(resultPosition),
+      prize: Number(resultPrize || 0),
+    })
+    .select()
+    .single();
+
+if (error) {
+  console.error(
+    "RESULT INSERT ERROR:",
+    error
+  );
+
+  setMessage(
+    `Failed to save result: ${error.message}`
+  );
+
+  setSavingResult(false);
+  return;
+}
+
+console.log(
+  "RESULT SAVED:",
+  insertedResult
+);
+setMessage(
+  "Tournament result added successfully!"
 );
 
-      if (!selectedPlayer) {
-        setMessage("Player not found.");
-        setSavingResult(false);
-        return;
-      }
+setResultPlayerId("");
+setResultPosition("1");
+setResultPrize("");
+setSavingResult(false);
+            }}
+            ></form>
 
- const { error } = await supabase
-  .from("tournament_results")
-  .insert({
-    tournament_id: resultTournamentId,
-    player_id: selectedPlayer.player_id,
-    username: selectedPlayer.username,
-    position: Number(resultPosition),
-    prize: Number(resultPrize || 0),
-  });
-
-      if (error) {
-        setMessage(error.message);
-        setSavingResult(false);
-        return;
-      }
-
-      setMessage("Tournament result added successfully!");
-
-      setResultPlayerId("");
-      setResultPosition("1");
-      setResultPrize("");
-
-      setSavingResult(false);
-    }}
-    className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6"
-  >
-    <div className="grid gap-5 md:grid-cols-2">
-      <div>
-        <label className="text-sm font-semibold text-gray-300">
-          Tournament
-        </label>
-
-        <select
-          value={resultTournamentId}
-          onChange={(e) => {
-            setResultTournamentId(e.target.value);
-            setResultPlayerId("");
-          }}
-          className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-green-400"
-        >
-          <option value="">
-            Select Tournament
-          </option>
-
-          {tournaments.map((tournament) => (
-            <option
-              key={tournament.id}
-              value={tournament.id}
-            >
-              {tournament.title}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label className="text-sm font-semibold text-gray-300">
-  Player
-</label>
-
-<select
-  value={resultPlayerId}
-  onChange={(e) => setResultPlayerId(e.target.value)}
-  disabled={!resultTournamentId}
-  className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-green-400 disabled:opacity-50"
+<div
+  className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6"
 >
-  <option value="">
-    Select Player
-  </option>
+            <div className="grid gap-5 md:grid-cols-2">
+              <div>
+                <label className="text-sm font-semibold text-gray-300">
+                  Tournament
+                </label>
 
-  {players
-    .filter((player) => {
-      const tournamentData = Array.isArray(player.tournaments)
-        ? player.tournaments[0]
-        : player.tournaments;
+                <select
+                  value={
+                    resultTournamentId
+                  }
+                  onChange={(e) => {
+                    setResultTournamentId(
+                      e.target.value
+                    );
+                    setResultPlayerId("");
+                  }}
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-green-400"
+                >
+                  <option value="">
+                    Select Tournament
+                  </option>
 
-      const selectedTournament = tournaments.find(
-        (tournament) => tournament.id === resultTournamentId
-      );
+                  {tournaments.map(
+                    (tournament) => (
+                      <option
+                        key={
+                          tournament.id
+                        }
+                        value={
+                          tournament.id
+                        }
+                      >
+                        {
+                          tournament.title
+                        }
+                      </option>
+                    )
+                  )}
+                </select>
+              </div>
 
-      return tournamentData?.title === selectedTournament?.title;
-    })
-    .map((player) => (
-      <option
-        key={player.id}
-        value={player.player_id}
-      >
-        {player.username} — {player.game_id}
-      </option>
-    ))}
-</select>
-      </div>
+              <div>
+                <label className="text-sm font-semibold text-gray-300">
+                  Player
+                </label>
 
-      <div>
-        <label className="text-sm font-semibold text-gray-300">
-          Position
-        </label>
+                <select
+                  value={
+                    resultPlayerId
+                  }
+                  onChange={(e) =>
+                    setResultPlayerId(
+                      e.target.value
+                    )
+                  }
+                  disabled={
+                    !resultTournamentId
+                  }
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-green-400 disabled:opacity-50"
+                >
+                  <option value="">
+                    Select Player
+                  </option>
 
-        <select
-          value={resultPosition}
-          onChange={(e) =>
-            setResultPosition(e.target.value)
-          }
-          className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-green-400"
-        >
-          <option value="1">1st Place</option>
-          <option value="2">2nd Place</option>
-          <option value="3">3rd Place</option>
-          <option value="4">4th Place</option>
-          <option value="5">5th Place</option>
-        </select>
-      </div>
+                  {players
+                    .filter((player) => {
+                      const tournamentData =
+                        Array.isArray(
+                          player.tournaments
+                        )
+                          ? player
+                              .tournaments[0]
+                          : player.tournaments;
 
-      <div>
-        <label className="text-sm font-semibold text-gray-300">
-          Prize
-        </label>
+                      const selectedTournament =
+                        tournaments.find(
+                          (tournament) =>
+                            tournament.id ===
+                            resultTournamentId
+                        );
 
-        <input
-          type="number"
-          min="0"
-          value={resultPrize}
-          onChange={(e) =>
-            setResultPrize(e.target.value)
-          }
-          placeholder="Prize amount"
-          className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none placeholder:text-gray-500 focus:border-green-400"
-        />
-      </div>
-    </div>
+                      return (
+                        tournamentData?.title ===
+                        selectedTournament?.title
+                      );
+                    })
+                    .map((player) => (
+                      <option
+                        key={player.id}
+                        value={
+                          player.player_id
+                        }
+                      >
+                        {
+                          player.username
+                        }{" "}
+                        —{" "}
+                        {
+                          player.game_id
+                        }
+                      </option>
+                    ))}
+                </select>
+              </div>
 
-    <button
-      type="submit"
-      disabled={savingResult}
-      className="mt-6 w-full rounded-xl bg-green-400 py-3 font-black text-black transition hover:bg-green-300 disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      {savingResult
-        ? "Saving Result..."
-        : "Add Result"}
-    </button>
-  </form>
-</div>
+              <div>
+                <label className="text-sm font-semibold text-gray-300">
+                  Position
+                </label>
+
+                <select
+                  value={
+                    resultPosition
+                  }
+                  onChange={(e) =>
+                    setResultPosition(
+                      e.target.value
+                    )
+                  }
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-green-400"
+                >
+                  <option value="1">
+                    1st Place
+                  </option>
+
+                  <option value="2">
+                    2nd Place
+                  </option>
+
+                  <option value="3">
+                    3rd Place
+                  </option>
+
+                  <option value="4">
+                    4th Place
+                  </option>
+
+                  <option value="5">
+                    5th Place
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-gray-300">
+                  Prize
+                </label>
+
+                <input
+                  type="number"
+                  min="0"
+                  value={resultPrize}
+                  onChange={(e) =>
+                    setResultPrize(
+                      e.target.value
+                    )
+                  }
+                  placeholder="Prize amount"
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none placeholder:text-gray-500 focus:border-green-400"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={savingResult}
+              className="mt-6 w-full rounded-xl bg-green-400 py-3 font-black text-black transition hover:bg-green-300 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {savingResult
+                ? "Saving Result..."
+                : "Add Result"}
+                       </button>
+          </div>
+        </div>
+
         {/* Registered Players */}
-<div className="mt-16">
-  <h2 className="text-2xl font-black">
-    Registered Players
-  </h2>
-  <div className="mt-5">
-  <input
-    type="text"
-    value={playerSearch}
-    onChange={(e) => setPlayerSearch(e.target.value)}
-    placeholder="Search players..."
-    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-gray-500 focus:border-green-400"
-  />
-</div>
+        <div className="mt-16">
+          <h2 className="text-2xl font-black">
+            Registered Players
+          </h2>
 
-  <p className="mt-2 text-gray-400">
-    Players who have joined your tournaments.
-  </p>
+          <div className="mt-5">
+            <input
+              type="text"
+              value={playerSearch}
+              onChange={(e) =>
+                setPlayerSearch(
+                  e.target.value
+                )
+              }
+              placeholder="Search players..."
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-gray-500 focus:border-green-400"
+            />
+          </div>
 
-  {loadingPlayers ? (
-    <p className="mt-6 text-gray-400">
-      Loading players...
-    </p>
-  ) : players.length === 0 ? (
-    <p className="mt-6 text-gray-400">
-      No registered players yet.
-    </p>
-  ) : (
-    <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
-      <table className="w-full min-w-[700px] text-left">
-        <thead className="border-b border-white/10">
-          <tr>
-            <th className="px-5 py-4 text-sm text-gray-400">
-              Player
-            </th>
+          <p className="mt-2 text-gray-400">
+            Players who have joined your
+            tournaments.
+          </p>
 
-            <th className="px-5 py-4 text-sm text-gray-400">
-              Game ID
-            </th>
+          {loadingPlayers ? (
+            <p className="mt-6 text-gray-400">
+              Loading players...
+            </p>
+          ) : players.length === 0 ? (
+            <p className="mt-6 text-gray-400">
+              No registered players yet.
+            </p>
+          ) : (
+            <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
+              <table className="w-full min-w-[700px] text-left">
+                <thead className="border-b border-white/10">
+                  <tr>
+                    <th className="px-5 py-4 text-sm text-gray-400">
+                      Player
+                    </th>
 
-            <th className="px-5 py-4 text-sm text-gray-400">
-              Tournament
-            </th>
+                    <th className="px-5 py-4 text-sm text-gray-400">
+                      Game ID
+                    </th>
 
-            <th className="px-5 py-4 text-sm text-gray-400">
-              Game
-            </th>
+                    <th className="px-5 py-4 text-sm text-gray-400">
+                      Tournament
+                    </th>
 
-            <th className="px-5 py-4 text-sm text-gray-400">
-              Joined
-            </th>
-          </tr>
-        </thead>
+                    <th className="px-5 py-4 text-sm text-gray-400">
+                      Game
+                    </th>
 
-<tbody>
-  {players
-    .filter((player) => {
-      const search = playerSearch.toLowerCase().trim();
+                    <th className="px-5 py-4 text-sm text-gray-400">
+                      Joined
+                    </th>
+                  </tr>
+                </thead>
 
-      if (!search) return true;
+                <tbody>
+                  {players
+                    .filter((player) => {
+                      const search =
+                        playerSearch
+                          .toLowerCase()
+                          .trim();
 
-      const tournamentData = Array.isArray(player.tournaments)
-        ? player.tournaments[0]
-        : player.tournaments;
+                      if (!search)
+                        return true;
 
-      return (
-        player.username.toLowerCase().includes(search) ||
-        player.game_id.toLowerCase().includes(search) ||
-        tournamentData?.title?.toLowerCase().includes(search) ||
-        tournamentData?.game?.toLowerCase().includes(search)
-      );
-    })
-    .map((player) => {
-            const tournamentData = Array.isArray(player.tournaments)
-              ? player.tournaments[0]
-              : player.tournaments;
+                      const tournamentData =
+                        Array.isArray(
+                          player.tournaments
+                        )
+                          ? player
+                              .tournaments[0]
+                          : player.tournaments;
 
-            return (
-              <tr
-                key={player.id}
-                className="border-b border-white/5 last:border-b-0"
-              >
-                <td className="px-5 py-4 font-bold">
-                  {player.username}
-                </td>
+                      return (
+                        player.username
+                          .toLowerCase()
+                          .includes(
+                            search
+                          ) ||
+                        player.game_id
+                          .toLowerCase()
+                          .includes(
+                            search
+                          ) ||
+                        tournamentData?.title
+                          ?.toLowerCase()
+                          .includes(
+                            search
+                          ) ||
+                        tournamentData?.game
+                          ?.toLowerCase()
+                          .includes(
+                            search
+                          )
+                      );
+                    })
+                    .map((player) => {
+                      const tournamentData =
+                        Array.isArray(
+                          player.tournaments
+                        )
+                          ? player
+                              .tournaments[0]
+                          : player.tournaments;
 
-                <td className="px-5 py-4 text-gray-300">
-                  {player.game_id}
-                </td>
+                      return (
+                        <tr
+                          key={player.id}
+                          className="border-b border-white/5 last:border-b-0"
+                        >
+                          <td className="px-5 py-4 font-bold">
+                            {
+                              player.username
+                            }
+                          </td>
 
-                <td className="px-5 py-4 text-gray-300">
-                  {tournamentData?.title || "Unknown"}
-                </td>
+                          <td className="px-5 py-4 text-gray-300">
+                            {
+                              player.game_id
+                            }
+                          </td>
 
-                <td className="px-5 py-4 text-gray-300">
-                  {tournamentData?.game || "Unknown"}
-                </td>
+                          <td className="px-5 py-4 text-gray-300">
+                            {
+                              tournamentData?.title ||
+                              "Unknown"
+                            }
+                          </td>
 
-                <td className="px-5 py-4 text-gray-400">
-                  {new Date(
-                    player.joined_at
-                  ).toLocaleString()}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  )}
-</div>
+                          <td className="px-5 py-4 text-gray-300">
+                            {
+                              tournamentData?.game ||
+                              "Unknown"
+                            }
+                          </td>
+
+                          <td className="px-5 py-4 text-gray-400">
+                            {new Date(
+                              player.joined_at
+                            ).toLocaleString()}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </section>
     </main>
   );
