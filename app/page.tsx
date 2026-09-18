@@ -874,6 +874,12 @@ if (!winnerError && winnerData) {
                 >
                   Player Dashboard
                 </a>
+                <a
+  href="/admin"
+  className="block text-sm text-gray-500 transition hover:text-green-400"
+>
+  Admin Login
+</a>
 
                 <a
                   href="/organizer"

@@ -16,6 +16,7 @@ type Tournament = {
   id: string;
   title: string;
   game: string;
+  format: "solo" | "squad";
   entry_fee: number;
   prize_pool: number;
   max_players: number;
@@ -26,8 +27,8 @@ type Tournament = {
   room_id: string | null;
   room_password: string | null;
   is_private?: boolean;
-access_number?: string | null;
-access_password?: string | null;
+  access_number?: string | null;
+  access_password?: string | null;
 };
 
 type Player = {
@@ -50,51 +51,83 @@ type Player = {
 };
 
 export default function OrganizerPage() {
-  const [organizer, setOrganizer] = useState<Organizer | null>(null);
+  const [organizer, setOrganizer] =
+    useState<Organizer | null>(null);
 
   const [loading, setLoading] = useState(true);
-  const [loadingTournaments, setLoadingTournaments] = useState(true);
-  const [loadingPlayers, setLoadingPlayers] = useState(false);
+  const [loadingTournaments, setLoadingTournaments] =
+    useState(true);
+  const [loadingPlayers, setLoadingPlayers] =
+    useState(false);
 
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [playerCounts, setPlayerCounts] = useState<
-    Record<string, number>
-  >({});
+  const [tournaments, setTournaments] =
+    useState<Tournament[]>([]);
+
+  const [players, setPlayers] =
+    useState<Player[]>([]);
+
+  const [playerCounts, setPlayerCounts] =
+    useState<Record<string, number>>({});
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const [showCreateForm, setShowCreateForm] =
+    useState(false);
 
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [savingEdit, setSavingEdit] = useState(false);
+  const [creating, setCreating] =
+    useState(false);
+
+  const [editingId, setEditingId] =
+    useState<string | null>(null);
+
+  const [savingEdit, setSavingEdit] =
+    useState(false);
 
   const [title, setTitle] = useState("");
   const [game, setGame] = useState("BGMI");
+
+  const [format, setFormat] =
+    useState<"solo" | "squad">("solo");
+
   const [entryFee, setEntryFee] = useState("");
   const [prizePool, setPrizePool] = useState("");
-  const [maxPlayers, setMaxPlayers] = useState("100");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+  const [maxPlayers, setMaxPlayers] =
+    useState("100");
+
+  const [startTime, setStartTime] =
+    useState("");
+
+  const [endTime, setEndTime] =
+    useState("");
+
   const [roomId, setRoomId] = useState("");
-  const [roomPassword, setRoomPassword] = useState("");
+  const [roomPassword, setRoomPassword] =
+    useState("");
+
   const [registrationStatus, setRegistrationStatus] =
     useState("open");
 
   const [tournamentFilter, setTournamentFilter] =
     useState("all");
-    const [isPrivate, setIsPrivate] = useState(false);
-const [accessNumber, setAccessNumber] = useState("");
-const [accessPassword, setAccessPassword] = useState("");
+
+  const [isPrivate, setIsPrivate] =
+    useState(false);
+
+  const [accessNumber, setAccessNumber] =
+    useState("");
+
+  const [accessPassword, setAccessPassword] =
+    useState("");
 
   const [tournamentSearch, setTournamentSearch] =
     useState("");
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] =
+    useState(1);
 
-  const [playerSearch, setPlayerSearch] = useState("");
+  const [playerSearch, setPlayerSearch] =
+    useState("");
 
   const [resultTournamentId, setResultTournamentId] =
     useState("");
@@ -112,36 +145,39 @@ const [accessPassword, setAccessPassword] = useState("");
     useState(false);
 
   const tournamentsPerPage = 5;
+
   function generateAccessNumber() {
-  return String(
-    Math.floor(
-      100000 + Math.random() * 900000
-    )
-  );
-}
-
-function generateAccessPassword() {
-  const characters =
-    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-
-  let password = "";
-
-  for (let i = 0; i < 8; i++) {
-    password +=
-      characters[
-        Math.floor(
-          Math.random() * characters.length
-        )
-      ];
+    return String(
+      Math.floor(
+        100000 + Math.random() * 900000
+      )
+    );
   }
 
-  return password;
-}
+  function generateAccessPassword() {
+    const characters =
+      "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+
+    let password = "";
+
+    for (let i = 0; i < 8; i++) {
+      password +=
+        characters[
+          Math.floor(
+            Math.random() * characters.length
+          )
+        ];
+    }
+
+    return password;
+  }
 
   useEffect(() => {
     async function loadOrganizer() {
-      const { data: authData, error: authError } =
-        await supabase.auth.getUser();
+      const {
+        data: authData,
+        error: authError,
+      } = await supabase.auth.getUser();
 
       if (authError || !authData.user) {
         window.location.href = "/login";
@@ -150,14 +186,16 @@ function generateAccessPassword() {
 
       const user = authData.user;
 
-      const { data: organizerData, error: organizerError } =
-        await supabase
-          .from("organizers")
-          .select(
-            "id, organizer_name, organization_name, email, phone, status"
-          )
-          .eq("user_id", user.id)
-          .maybeSingle();
+      const {
+        data: organizerData,
+        error: organizerError,
+      } = await supabase
+        .from("organizers")
+        .select(
+          "id, organizer_name, organization_name, email, phone, status"
+        )
+        .eq("user_id", user.id)
+        .maybeSingle();
 
       if (organizerError) {
         console.error(organizerError);
@@ -167,7 +205,8 @@ function generateAccessPassword() {
       }
 
       if (!organizerData) {
-        window.location.href = "/organizer/apply";
+        window.location.href =
+          "/organizer/apply";
         return;
       }
 
@@ -175,8 +214,13 @@ function generateAccessPassword() {
 
       setLoading(false);
 
-      await loadTournaments(organizerData.id);
-      await loadPlayers(organizerData.id);
+      await loadTournaments(
+        organizerData.id
+      );
+
+      await loadPlayers(
+        organizerData.id
+      );
     }
 
     loadOrganizer();
@@ -187,16 +231,21 @@ function generateAccessPassword() {
     endTime: string
   ) {
     const now = new Date().getTime();
-    const start = new Date(startTime).getTime();
-    const end = new Date(endTime).getTime();
+    const start =
+      new Date(startTime).getTime();
+    const end =
+      new Date(endTime).getTime();
 
     if (now < start) return "UPCOMING";
+
     if (now < end) return "LIVE";
 
     return "COMPLETED";
   }
 
-  async function loadTournaments(organizerId?: string) {
+  async function loadTournaments(
+    organizerId?: string
+  ) {
     const currentOrganizerId =
       organizerId || organizer?.id;
 
@@ -204,11 +253,19 @@ function generateAccessPassword() {
 
     setLoadingTournaments(true);
 
-    const { data, error } = await supabase
+    const {
+      data,
+      error,
+    } = await supabase
       .from("tournaments")
       .select("*")
-      .eq("organizer_id", currentOrganizerId)
-      .order("start_time", { ascending: true });
+      .eq(
+        "organizer_id",
+        currentOrganizerId
+      )
+      .order("start_time", {
+        ascending: true,
+      });
 
     if (error) {
       console.error(error);
@@ -219,25 +276,34 @@ function generateAccessPassword() {
 
     setTournaments(data || []);
 
-    const counts: Record<string, number> = {};
+    const counts: Record<string, number> =
+      {};
 
     for (const tournament of data || []) {
-      const { count } = await supabase
-        .from("tournament_players")
-        .select("*", {
-          count: "exact",
-          head: true,
-        })
-        .eq("tournament_id", tournament.id);
+      const { count } =
+        await supabase
+          .from("tournament_players")
+          .select("*", {
+            count: "exact",
+            head: true,
+          })
+          .eq(
+            "tournament_id",
+            tournament.id
+          );
 
-      counts[tournament.id] = count || 0;
+      counts[tournament.id] =
+        count || 0;
     }
 
     setPlayerCounts(counts);
+
     setLoadingTournaments(false);
   }
 
-  async function loadPlayers(organizerId?: string) {
+  async function loadPlayers(
+    organizerId?: string
+  ) {
     const currentOrganizerId =
       organizerId || organizer?.id;
 
@@ -245,15 +311,20 @@ function generateAccessPassword() {
 
     setLoadingPlayers(true);
 
-    const { data: organizerTournaments } =
-      await supabase
-        .from("tournaments")
-        .select("id")
-        .eq("organizer_id", currentOrganizerId);
+    const {
+      data: organizerTournaments,
+    } = await supabase
+      .from("tournaments")
+      .select("id")
+      .eq(
+        "organizer_id",
+        currentOrganizerId
+      );
 
     const tournamentIds =
       organizerTournaments?.map(
-        (tournament) => tournament.id
+        (tournament) =>
+          tournament.id
       ) || [];
 
     if (tournamentIds.length === 0) {
@@ -262,7 +333,10 @@ function generateAccessPassword() {
       return;
     }
 
-    const { data, error } = await supabase
+    const {
+      data,
+      error,
+    } = await supabase
       .from("tournament_players")
       .select(`
         id,
@@ -276,7 +350,10 @@ function generateAccessPassword() {
           game
         )
       `)
-      .in("tournament_id", tournamentIds)
+      .in(
+        "tournament_id",
+        tournamentIds
+      )
       .order("joined_at", {
         ascending: false,
       });
@@ -288,26 +365,44 @@ function generateAccessPassword() {
       return;
     }
 
-    setPlayers((data || []) as Player[]);
+    setPlayers(
+      (data || []) as Player[]
+    );
+
     setLoadingPlayers(false);
   }
 
- function resetForm() {
-  setTitle("");
-  setGame("BGMI");
-  setEntryFee("");
-  setPrizePool("");
-  setMaxPlayers("100");
-  setStartTime("");
-  setEndTime("");
-  setRoomId("");
-  setRoomPassword("");
-  setRegistrationStatus("open");
-  setIsPrivate(false);
-  setAccessNumber("");
-  setAccessPassword("");
-  setEditingId(null);
-}
+  function resetForm() {
+    setTitle("");
+
+    setGame("BGMI");
+
+    setFormat("solo");
+
+    setEntryFee("");
+
+    setPrizePool("");
+
+    setMaxPlayers("100");
+
+    setStartTime("");
+
+    setEndTime("");
+
+    setRoomId("");
+
+    setRoomPassword("");
+
+    setRegistrationStatus("open");
+
+    setIsPrivate(false);
+
+    setAccessNumber("");
+
+    setAccessPassword("");
+
+    setEditingId(null);
+  }
 
   async function createTournament(
     event: FormEvent<HTMLFormElement>
@@ -315,51 +410,83 @@ function generateAccessPassword() {
     event.preventDefault();
 
     if (!organizer) {
-      setError("Organizer profile not found.");
+      setError(
+        "Organizer profile not found."
+      );
+
       return;
     }
 
     setCreating(true);
+
     setError("");
+
     setMessage("");
-    const finalAccessNumber = isPrivate
-  ? generateAccessNumber()
-  : null;
 
-const finalAccessPassword = isPrivate
-  ? generateAccessPassword()
-  : null;
+    const finalAccessNumber =
+      isPrivate
+        ? generateAccessNumber()
+        : null;
 
-    const { error: createError } = await supabase
+    const finalAccessPassword =
+      isPrivate
+        ? generateAccessPassword()
+        : null;
+
+    const {
+      error: createError,
+    } = await supabase
       .from("tournaments")
       .insert({
         organizer_id: organizer.id,
+
         title: title.trim(),
+
         game,
+
+        format,
+
         entry_fee: Number(entryFee),
+
         prize_pool: Number(prizePool),
+
         max_players: Number(maxPlayers),
+
         start_time: new Date(
           startTime
         ).toISOString(),
+
         end_time: new Date(
           endTime
         ).toISOString(),
+
         status: "upcoming",
+
         registration_status:
           registrationStatus,
-        room_id: roomId.trim() || null,
+
+        room_id:
+          roomId.trim() || null,
+
         room_password:
           roomPassword.trim() || null,
-          is_private: isPrivate,
-access_number: finalAccessNumber,
-access_password: finalAccessPassword,
+
+        is_private: isPrivate,
+
+        access_number:
+          finalAccessNumber,
+
+        access_password:
+          finalAccessPassword,
       });
 
     if (createError) {
       console.error(createError);
+
       setError(createError.message);
+
       setCreating(false);
+
       return;
     }
 
@@ -371,8 +498,13 @@ access_password: finalAccessPassword,
 
     setShowCreateForm(false);
 
-    await loadTournaments(organizer.id);
-    await loadPlayers(organizer.id);
+    await loadTournaments(
+      organizer.id
+    );
+
+    await loadPlayers(
+      organizer.id
+    );
 
     setCreating(false);
   }
@@ -383,29 +515,40 @@ access_password: finalAccessPassword,
     setEditingId(tournament.id);
 
     setTitle(tournament.title);
+
     setGame(tournament.game);
+
+    setFormat(
+      tournament.format || "solo"
+    );
+
     setEntryFee(
       String(tournament.entry_fee)
     );
+
     setPrizePool(
       String(tournament.prize_pool)
     );
+
     setMaxPlayers(
       String(tournament.max_players)
     );
 
-    const start = new Date(
-      tournament.start_time
-    );
+    const start =
+      new Date(
+        tournament.start_time
+      );
 
-    const end = new Date(
-      tournament.end_time
-    );
+    const end =
+      new Date(
+        tournament.end_time
+      );
 
     setStartTime(
       new Date(
         start.getTime() -
-          start.getTimezoneOffset() * 60000
+          start.getTimezoneOffset() *
+            60000
       )
         .toISOString()
         .slice(0, 16)
@@ -414,7 +557,8 @@ access_password: finalAccessPassword,
     setEndTime(
       new Date(
         end.getTime() -
-          end.getTimezoneOffset() * 60000
+          end.getTimezoneOffset() *
+            60000
       )
         .toISOString()
         .slice(0, 16)
@@ -427,17 +571,18 @@ access_password: finalAccessPassword,
     setRoomPassword(
       tournament.room_password || ""
     );
+
     setIsPrivate(
-  tournament.is_private ?? false
-);
+      tournament.is_private ?? false
+    );
 
-setAccessNumber(
-  tournament.access_number || ""
-);
+    setAccessNumber(
+      tournament.access_number || ""
+    );
 
-setAccessPassword(
-  tournament.access_password || ""
-);
+    setAccessPassword(
+      tournament.access_password || ""
+    );
 
     setRegistrationStatus(
       tournament.registration_status ||
@@ -462,41 +607,58 @@ setAccessPassword(
     }
 
     setSavingEdit(true);
+
     setError("");
+
     setMessage("");
 
-    const { error: updateError } =
-      await supabase
-        .from("tournaments")
-        .update({
-          title: title.trim(),
-          game,
-          entry_fee: Number(entryFee),
-          prize_pool: Number(prizePool),
-          max_players: Number(maxPlayers),
-          start_time: new Date(
-            startTime
-          ).toISOString(),
-          end_time: new Date(
-            endTime
-          ).toISOString(),
-          registration_status:
-            registrationStatus,
-          room_id:
-            roomId.trim() || null,
-          room_password:
-            roomPassword.trim() || null,
-        })
-        .eq("id", editingId)
-        .eq(
-          "organizer_id",
-          organizer.id
-        );
+    const {
+      error: updateError,
+    } = await supabase
+      .from("tournaments")
+      .update({
+        title: title.trim(),
+
+        game,
+
+        format,
+
+        entry_fee: Number(entryFee),
+
+        prize_pool: Number(prizePool),
+
+        max_players: Number(maxPlayers),
+
+        start_time: new Date(
+          startTime
+        ).toISOString(),
+
+        end_time: new Date(
+          endTime
+        ).toISOString(),
+
+        registration_status:
+          registrationStatus,
+
+        room_id:
+          roomId.trim() || null,
+
+        room_password:
+          roomPassword.trim() || null,
+      })
+      .eq("id", editingId)
+      .eq(
+        "organizer_id",
+        organizer.id
+      );
 
     if (updateError) {
       console.error(updateError);
+
       setError(updateError.message);
+
       setSavingEdit(false);
+
       return;
     }
 
@@ -508,110 +670,164 @@ setAccessPassword(
 
     setShowCreateForm(false);
 
-    await loadTournaments(organizer.id);
-    await loadPlayers(organizer.id);
+    await loadTournaments(
+      organizer.id
+    );
+
+    await loadPlayers(
+      organizer.id
+    );
 
     setSavingEdit(false);
   }
 
-  async function deleteTournament(
-    tournamentId: string
-  ) {
-    const confirmed =
-      window.confirm(
-        "Are you sure you want to delete this tournament?"
-      );
-
-    if (!confirmed) return;
-
-    if (!organizer) return;
-
-    setError("");
-    setMessage("");
-
-    const { error: deleteError } =
-      await supabase
-        .from("tournaments")
-        .delete()
-        .eq("id", tournamentId)
-        .eq(
-          "organizer_id",
-          organizer.id
-        );
-
-    if (deleteError) {
-      console.error(deleteError);
-      setError(deleteError.message);
-      return;
-    }
-
-    setMessage(
-      "Tournament deleted successfully."
+ async function deleteTournament(
+  tournamentId: string
+) {
+  const confirmed =
+    window.confirm(
+      "Are you sure you want to delete this tournament?"
     );
 
-    await loadTournaments(organizer.id);
-    await loadPlayers(organizer.id);
+  if (!confirmed) {
+    return;
   }
 
-  const filteredTournaments =
-    tournaments.filter((tournament) => {
-      if (
-        tournamentFilter !== "all"
-      ) {
-        const status =
-          getTournamentStatus(
-            tournament.start_time,
-            tournament.end_time
-          );
+  if (!organizer) {
+    setError(
+      "Organizer information could not be found."
+    );
+    return;
+  }
 
-        if (
-          status !==
-          tournamentFilter
-        ) {
-          return false;
-        }
-      }
+  setError("");
+  setMessage("");
 
-      const search =
-        tournamentSearch
-          .toLowerCase()
-          .trim();
-
-      if (!search) return true;
-
-      return (
-        tournament.title
-          .toLowerCase()
-          .includes(search) ||
-        tournament.game
-          .toLowerCase()
-          .includes(search)
-      );
-    });
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(
-      filteredTournaments.length /
-        tournamentsPerPage
+  const {
+    data: deletedTournament,
+    error: deleteError,
+  } = await supabase
+    .from("tournaments")
+    .delete()
+    .eq("id", tournamentId)
+    .eq(
+      "organizer_id",
+      organizer.id
     )
-  );
+    .select("id")
+    .maybeSingle();
+
+  if (deleteError) {
+    console.error(
+      "Tournament delete error:",
+      deleteError
+    );
+
+    setError(
+      `Unable to delete tournament: ${deleteError.message}`
+    );
+
+    return;
+  }
+
+  if (!deletedTournament) {
+    setError(
+      "Tournament was not deleted. You may not have permission to delete this tournament."
+    );
+
+    return;
+  }
+
+  setTournaments((currentTournaments) =>
+  currentTournaments.filter(
+    (tournament) =>
+      tournament.id !== tournamentId
+  )
+);
+const {
+  data: verifyTournament,
+  error: verifyError,
+} = await supabase
+  .from("tournaments")
+  .select("id, title")
+  .eq("id", tournamentId)
+  .maybeSingle();
+
+console.log(
+  "DELETE VERIFICATION:",
+  verifyTournament,
+  verifyError
+);
+
+setMessage(
+  "Tournament deleted successfully."
+);
+}
+  const filteredTournaments =
+    tournaments.filter(
+      (tournament) => {
+        if (
+          tournamentFilter !==
+          "all"
+        ) {
+          const status =
+            getTournamentStatus(
+              tournament.start_time,
+              tournament.end_time
+            );
+
+          if (
+            status !==
+            tournamentFilter
+          ) {
+            return false;
+          }
+        }
+
+        const search =
+          tournamentSearch
+            .toLowerCase()
+            .trim();
+
+        if (!search) return true;
+
+        return (
+          tournament.title
+            .toLowerCase()
+            .includes(search) ||
+          tournament.game
+            .toLowerCase()
+            .includes(search)
+        );
+      }
+    );
+
+  const totalPages =
+    Math.max(
+      1,
+      Math.ceil(
+        filteredTournaments.length /
+          tournamentsPerPage
+      )
+    );
 
   const paginatedTournaments =
     filteredTournaments.slice(
       (currentPage - 1) *
         tournamentsPerPage,
+
       currentPage *
         tournamentsPerPage
     );
 
-  const totalPlayers = Object.values(
-    playerCounts
-  ).reduce(
-    (total, count) =>
-      total + count,
-    0
-  );
+  const totalPlayers =
+    Object.values(
+      playerCounts
+    ).reduce(
+      (total, count) =>
+        total + count,
+      0
+    );
 
   const liveTournaments =
     tournaments.filter(
@@ -644,11 +860,14 @@ setAccessPassword(
       setError(
         "Please select tournament, player and position."
       );
+
       return;
     }
 
     setSavingResult(true);
+
     setError("");
+
     setMessage("");
 
     const selectedPlayer =
@@ -660,7 +879,9 @@ setAccessPassword(
 
     if (!selectedPlayer) {
       setError("Player not found.");
+
       setSavingResult(false);
+
       return;
     }
 
@@ -670,20 +891,29 @@ setAccessPassword(
         .insert({
           tournament_id:
             resultTournamentId,
+
           player_id:
             selectedPlayer.player_id,
+
           username:
             selectedPlayer.username,
+
           position:
             Number(resultPosition),
+
           prize:
-            Number(resultPrize || 0),
+            Number(
+              resultPrize || 0
+            ),
         });
 
     if (error) {
       console.error(error);
+
       setError(error.message);
+
       setSavingResult(false);
+
       return;
     }
 
@@ -692,7 +922,9 @@ setAccessPassword(
     );
 
     setResultPlayerId("");
+
     setResultPosition("1");
+
     setResultPrize("");
 
     setSavingResult(false);
@@ -700,6 +932,7 @@ setAccessPassword(
 
   async function logout() {
     await supabase.auth.signOut();
+
     window.location.href = "/login";
   }
 
@@ -865,7 +1098,9 @@ setAccessPassword(
                   type="text"
                   value={title}
                   onChange={(e) =>
-                    setTitle(e.target.value)
+                    setTitle(
+                      e.target.value
+                    )
                   }
                   placeholder="GameArena Battle"
                   required
@@ -881,7 +1116,9 @@ setAccessPassword(
                 <select
                   value={game}
                   onChange={(e) =>
-                    setGame(e.target.value)
+                    setGame(
+                      e.target.value
+                    )
                   }
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 outline-none focus:border-green-400"
                 >
@@ -899,6 +1136,34 @@ setAccessPassword(
 
                   <option value="Valorant">
                     Valorant
+                  </option>
+                </select>
+              </div>
+
+              {/* Tournament Format */}
+
+              <div>
+                <label className="text-sm font-semibold text-gray-300">
+                  Tournament Format
+                </label>
+
+                <select
+                  value={format}
+                  onChange={(e) =>
+                    setFormat(
+                      e.target.value as
+                        | "solo"
+                        | "squad"
+                    )
+                  }
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 outline-none focus:border-green-400"
+                >
+                  <option value="solo">
+                    Solo / Individual
+                  </option>
+
+                  <option value="squad">
+                    Squad / Team
                   </option>
                 </select>
               </div>
@@ -1050,7 +1315,9 @@ setAccessPassword(
                 </label>
 
                 <select
-                  value={registrationStatus}
+                  value={
+                    registrationStatus
+                  }
                   onChange={(e) =>
                     setRegistrationStatus(
                       e.target.value
@@ -1067,55 +1334,73 @@ setAccessPassword(
                   </option>
                 </select>
               </div>
+
               <div>
-  <label className="mb-2 block text-sm font-bold text-gray-300">
-    Tournament Access
-  </label>
+                <label className="mb-2 block text-sm font-bold text-gray-300">
+                  Tournament Access
+                </label>
 
-  <select
-    value={isPrivate ? "private" : "public"}
-    onChange={(e) => {
-      const privateTournament =
-        e.target.value === "private";
+                <select
+                  value={
+                    isPrivate
+                      ? "private"
+                      : "public"
+                  }
+                  onChange={(e) => {
+                    const privateTournament =
+                      e.target.value ===
+                      "private";
 
-      setIsPrivate(privateTournament);
+                    setIsPrivate(
+                      privateTournament
+                    );
 
-      if (!privateTournament) {
-        setAccessNumber("");
-        setAccessPassword("");
-      }
-    }}
-    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white"
-  >
-<option
-  value="public"
-  className="bg-gray-900 text-white"
->
-  Public Tournament
-</option>
+                    if (
+                      !privateTournament
+                    ) {
+                      setAccessNumber(
+                        ""
+                      );
 
-<option
-  value="private"
-  className="bg-gray-900 text-white"
->
-  Private Tournament
-</option>
-  </select>
+                      setAccessPassword(
+                        ""
+                      );
+                    }
+                  }}
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white"
+                >
+                  <option
+                    value="public"
+                    className="bg-gray-900 text-white"
+                  >
+                    Public Tournament
+                  </option>
 
-  {isPrivate && (
-    <div className="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4">
-      <p className="mb-2 text-sm font-bold text-yellow-300">
-        Private Tournament
-      </p>
+                  <option
+                    value="private"
+                    className="bg-gray-900 text-white"
+                  >
+                    Private Tournament
+                  </option>
+                </select>
 
-      <p className="text-sm text-gray-300">
-        A tournament number and password will be
-        generated automatically when you create
-        the tournament.
-      </p>
-    </div>
-  )}
-</div>
+                {isPrivate && (
+                  <div className="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4">
+                    <p className="mb-2 text-sm font-bold text-yellow-300">
+                      Private Tournament
+                    </p>
+
+                    <p className="text-sm text-gray-300">
+                      A tournament number
+                      and password will
+                      be generated
+                      automatically when
+                      you create the
+                      tournament.
+                    </p>
+                  </div>
+                )}
+              </div>
 
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
@@ -1140,6 +1425,7 @@ setAccessPassword(
                     type="button"
                     onClick={() => {
                       resetForm();
+
                       setShowCreateForm(
                         false
                       );
@@ -1164,11 +1450,14 @@ setAccessPassword(
           <div className="mt-5">
             <input
               type="text"
-              value={tournamentSearch}
+              value={
+                tournamentSearch
+              }
               onChange={(e) => {
                 setTournamentSearch(
                   e.target.value
                 );
+
                 setCurrentPage(1);
               }}
               placeholder="Search tournaments..."
@@ -1202,6 +1491,7 @@ setAccessPassword(
                   setTournamentFilter(
                     filter.value
                   );
+
                   setCurrentPage(1);
                 }}
                 className={`rounded-xl px-4 py-2 text-sm font-bold ${
@@ -1259,7 +1549,9 @@ setAccessPassword(
 
                   return (
                     <div
-                      key={tournament.id}
+                      key={
+                        tournament.id
+                      }
                       className="rounded-2xl border border-white/10 bg-white/5 p-6"
                     >
                       <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
@@ -1284,82 +1576,115 @@ setAccessPassword(
                             >
                               {status}
                             </span>
+
+                            <span className="rounded-full bg-blue-400/10 px-3 py-1 text-xs font-black text-blue-400">
+                              {tournament.format ===
+                              "squad"
+                                ? "SQUAD"
+                                : "SOLO"}
+                            </span>
+
                             {tournament.is_private && (
-  <span className="rounded-full bg-purple-400/10 px-3 py-1 text-xs font-black text-purple-400">
-    PRIVATE
-  </span>
-)}
+                              <span className="rounded-full bg-purple-400/10 px-3 py-1 text-xs font-black text-purple-400">
+                                PRIVATE
+                              </span>
+                            )}
                           </div>
 
                           <p className="mt-2 text-sm text-gray-400">
                             {tournament.game}
                           </p>
+
                           {tournament.is_private && (
-  <div className="mt-4 rounded-xl border border-purple-400/20 bg-purple-400/5 p-4">
-    <p className="text-xs font-bold uppercase tracking-wide text-purple-400">
-      Private Tournament Access
-    </p>
+                            <div className="mt-4 rounded-xl border border-purple-400/20 bg-purple-400/5 p-4">
+                              <p className="text-xs font-bold uppercase tracking-wide text-purple-400">
+                                Private Tournament Access
+                              </p>
 
-    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-      <div>
-        <p className="text-xs text-gray-500">
-          Tournament Number
-        </p>
+                              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                <div>
+                                  <p className="text-xs text-gray-500">
+                                    Tournament Number
+                                  </p>
 
-        <p className="mt-1 font-bold text-white">
-          {tournament.access_number || "Not available"}
-        </p>
-      </div>
+                                  <p className="mt-1 font-bold text-white">
+                                    {tournament.access_number ||
+                                      "Not available"}
+                                  </p>
+                                </div>
 
-      <div>
-        <p className="text-xs text-gray-500">
-          Tournament Password
-        </p>
+                                <div>
+                                  <p className="text-xs text-gray-500">
+                                    Tournament Password
+                                  </p>
 
-        <p className="mt-1 font-bold text-white">
-          {tournament.access_password || "Not available"}
-        </p>
-      </div>
-    </div>
-  </div>
-)}
+                                  <p className="mt-1 font-bold text-white">
+                                    {tournament.access_password ||
+                                      "Not available"}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
 
-                        <div className="flex flex-wrap gap-3">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              startEditing(
-                                tournament
-                              )
-                            }
-                            className="rounded-xl bg-blue-500/10 px-4 py-2 text-sm font-bold text-blue-400 hover:bg-blue-500/20"
-                          >
-                            Edit
-                          </button>
+                       <div className="flex flex-wrap gap-3">
+  {tournament.format === "squad" && (
+    <a
+      href={`/organizer/squads?tournament=${tournament.id}`}
+      className="rounded-xl bg-green-400/10 px-4 py-2 text-sm font-bold text-green-400 no-underline hover:bg-green-400/20"
+    >
+      Squads
+    </a>
+  )}
 
-                          <a
-                            href={`/tournaments/${tournament.id}`}
-                            className="rounded-xl border border-white/10 px-4 py-2 text-sm font-bold text-white no-underline hover:bg-white/10"
-                          >
-                            View
-                          </a>
+  <button
+    type="button"
+    onClick={() =>
+      startEditing(
+        tournament
+      )
+    }
+    className="rounded-xl bg-blue-500/10 px-4 py-2 text-sm font-bold text-blue-400 hover:bg-blue-500/20"
+  >
+    Edit
+  </button>
 
-                          <button
-                            type="button"
-                            onClick={() =>
-                              deleteTournament(
-                                tournament.id
-                              )
-                            }
-                            className="rounded-xl bg-red-500/10 px-4 py-2 text-sm font-bold text-red-400 hover:bg-red-500/20"
-                          >
-                            Delete
-                          </button>
-                        </div>
+<a
+  href={`/organizer/tournaments/${tournament.id}`}
+  className="rounded-xl border border-white/10 px-4 py-2 text-sm font-bold text-white no-underline hover:bg-white/10"
+>
+  View
+</a>
+
+  <button
+    type="button"
+    onClick={() =>
+      deleteTournament(
+        tournament.id
+      )
+    }
+    className="rounded-xl bg-red-500/10 px-4 py-2 text-sm font-bold text-red-400 hover:bg-red-500/20"
+  >
+    Delete
+  </button>
+</div>
                       </div>
 
                       <div className="mt-6 grid gap-4 border-t border-white/10 pt-5 sm:grid-cols-2 lg:grid-cols-4">
+                        <div>
+                          <p className="text-xs text-gray-500">
+                            Format
+                          </p>
+
+                          <p className="mt-1 font-bold text-blue-400">
+                            {tournament.format ===
+                            "squad"
+                              ? "Squad / Team"
+                              : "Solo / Individual"}
+                          </p>
+                        </div>
+
                         <div>
                           <p className="text-xs text-gray-500">
                             Entry Fee
@@ -1486,7 +1811,8 @@ setAccessPassword(
                       )
                     }
                     disabled={
-                      currentPage === 1
+                      currentPage ===
+                      1
                     }
                     className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-bold disabled:opacity-40"
                   >
@@ -1553,7 +1879,10 @@ setAccessPassword(
                     setResultTournamentId(
                       e.target.value
                     );
-                    setResultPlayerId("");
+
+                    setResultPlayerId(
+                      ""
+                    );
                   }}
                   className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 outline-none focus:border-green-400"
                 >

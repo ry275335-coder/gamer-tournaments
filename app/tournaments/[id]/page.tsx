@@ -8,6 +8,7 @@ type Tournament = {
   id: string;
   title: string;
   game: string;
+    format: "solo" | "squad";
   entry_fee: number;
   prize_pool: number;
   max_players: number;
@@ -46,8 +47,25 @@ export default function TournamentDetailsPage() {
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [isJoined, setIsJoined] = useState(false);
+  const [isSquadCaptain, setIsSquadCaptain] = useState(false);
+  const [captainSquadId, setCaptainSquadId] = useState<string | null>(null);
+  const [memberSquadId, setMemberSquadId] = useState<string | null>(null);
   const [room, setRoom] = useState<TournamentRoom | null>(null);
   const [results, setResults] = useState<TournamentResult[]>([]);
+  const [winningSquad, setWinningSquad] = useState<{
+  id: string;
+  squad_name: string;
+} | null>(null);
+type WinningSquadPlayer = {
+  id: string;
+  player_name: string;
+  game_id: string;
+  player_slot: number;
+  kills: number;
+};
+
+const [winningSquadPlayers, setWinningSquadPlayers] =
+  useState<WinningSquadPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
@@ -107,18 +125,20 @@ export default function TournamentDetailsPage() {
   async function loadTournament() {
     setLoading(true);
     setAccessDenied(false);
-    setTournament(null);
-    setPlayers([]);
-    setResults([]);
-    setRoom(null);
-    setIsJoined(false);
+setTournament(null);
+setPlayers([]);
+setResults([]);
+setRoom(null);
+setIsJoined(false);
+setWinningSquad(null);
+setWinningSquadPlayers([]);
 
     const { data: publicTournament, error: publicTournamentError } =
       await supabase
         .from("tournaments")
-        .select(
-          "id, title, game, entry_fee, prize_pool, max_players, start_time, end_time, status, registration_status, is_private"
-        )
+       .select(
+  "id, title, game, format, entry_fee, prize_pool, max_players, start_time, end_time, status, registration_status, is_private"
+)
         .eq("id", tournamentId)
         .maybeSingle();
 
@@ -154,6 +174,78 @@ if (!tournamentData) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+let loadedCaptainSquadId: string | null = null;
+let loadedSquadMember = false;
+
+setIsSquadCaptain(false);
+setCaptainSquadId(null);
+setMemberSquadId(null);
+
+if (user && tournamentData.format === "squad") {
+  const {
+    data: captainSquad,
+    error: captainError,
+  } = await supabase
+    .from("tournament_squads")
+    .select("id")
+    .eq("tournament_id", tournamentId)
+    .eq("captain_id", user.id)
+    .maybeSingle();
+    if (!captainSquad) {
+const {
+  data: memberSquadIdFromRpc,
+  error: squadMembershipError,
+} = await supabase.rpc(
+  "get_my_squad_id",
+  {
+    p_tournament_id: tournamentId,
+  }
+);
+
+console.log(
+  "MY SQUAD RPC RESULT:",
+  memberSquadIdFromRpc
+);
+
+console.log(
+  "MY SQUAD RPC ERROR:",
+  squadMembershipError
+);
+
+if (squadMembershipError) {
+  console.error(
+    "Squad membership loading error:",
+    squadMembershipError
+  );
+} else if (memberSquadIdFromRpc) {
+  loadedSquadMember = true;
+  setMemberSquadId(memberSquadIdFromRpc);
+}
+  if (squadMembershipError) {
+    console.error(
+      "Squad membership loading error:",
+      squadMembershipError
+    );
+} else if (memberSquadIdFromRpc) {
+  loadedSquadMember = true;
+  setMemberSquadId(memberSquadIdFromRpc);
+}
+}
+
+  if (captainError) {
+    console.error(
+      "Squad captain loading error:",
+      captainError
+    );
+  } else if (captainSquad) {
+    loadedCaptainSquadId = captainSquad.id;
+
+    setIsSquadCaptain(true);
+    setCaptainSquadId(captainSquad.id);
+
+
+  }
+}
 
     const now = new Date();
     const startTime = new Date(tournamentData.start_time);
@@ -171,6 +263,98 @@ if (!tournamentData) {
       ...tournamentData,
       status: currentStatus,
     });
+    const { data: winnerData, error: winnerError } =
+  await supabase
+    .from("tournament_squads")
+    .select("id, squad_name")
+    .eq("tournament_id", tournamentId)
+    .eq("is_winner", true)
+    .maybeSingle();
+    setWinningSquadPlayers([]);
+
+if (winnerData) {
+  const { data: winnerPlayers, error: winnerPlayersError } =
+    await supabase
+      .from("squad_players")
+      .select(
+        "id, player_name, game_id, player_slot"
+      )
+      .eq("squad_id", winnerData.id)
+      .order("player_slot", {
+        ascending: true,
+      });
+
+  if (winnerPlayersError) {
+    console.error(
+      "Winning squad players loading error:",
+      winnerPlayersError
+    );
+  } else if (winnerPlayers) {
+    const { data: approvedSubmission, error: submissionError } =
+      await supabase
+        .from("squad_match_submissions")
+        .select("id")
+        .eq("tournament_id", tournamentId)
+        .eq("squad_id", winnerData.id)
+        .eq("status", "approved")
+        .maybeSingle();
+
+    if (submissionError) {
+      console.error(
+        "Approved match submission loading error:",
+        submissionError
+      );
+    }
+
+    let playerKills: {
+      squad_player_id: string;
+      kills: number;
+    }[] = [];
+
+    if (approvedSubmission) {
+      const {
+        data: killResults,
+        error: killResultsError,
+      } = await supabase
+        .from("squad_player_match_results")
+        .select("squad_player_id, kills")
+        .eq("submission_id", approvedSubmission.id);
+
+      if (killResultsError) {
+        console.error(
+          "Winning squad kills loading error:",
+          killResultsError
+        );
+      } else {
+        playerKills = killResults ?? [];
+      }
+    }
+
+    const playersWithKills = winnerPlayers.map(
+      (player) => ({
+        ...player,
+        kills:
+          playerKills.find(
+            (result) =>
+              result.squad_player_id === player.id
+          )?.kills ?? 0,
+      })
+    );
+
+    setWinningSquadPlayers(playersWithKills);
+  }
+}
+
+if (winnerError) {
+  console.error(
+    "Winning squad loading error:",
+    winnerError
+  );
+
+  setWinningSquad(null);
+} else {
+  setWinningSquad(winnerData);
+}
 
     const { data: playerData, error: playerError } =
       await supabase
@@ -187,34 +371,41 @@ if (!tournamentData) {
 
     setPlayers(loadedPlayers);
 
-    if (user) {
-      const joined = loadedPlayers.some(
-        (player) => player.player_id === user.id
-      );
+if (user) {
+ const joinedAsPlayer = loadedPlayers.some(
+  (player) => player.player_id === user.id
+);
 
-      setIsJoined(joined);
+const joinedAsSquadCaptain =
+  tournamentData.format === "squad" &&
+  loadedCaptainSquadId !== null;
 
-      if (joined) {
-        const { data: roomData, error: roomError } =
-          await supabase
-            .from("tournament_rooms")
-            .select("room_id, room_password")
-            .eq("tournament_id", tournamentId)
-            .maybeSingle();
+const joined =
+  joinedAsPlayer || joinedAsSquadCaptain;
 
-        if (roomError) {
-          console.error("Room loading error:", roomError);
-          setRoom(null);
-        } else {
-          setRoom(roomData);
-        }
-      } else {
-        setRoom(null);
-      }
-    } else {
-      setIsJoined(false);
+setIsJoined(joined);
+
+  if (joined) {
+    const { data: roomData, error: roomError } =
+      await supabase
+        .from("tournament_rooms")
+        .select("room_id, room_password")
+        .eq("tournament_id", tournamentId)
+        .maybeSingle();
+
+    if (roomError) {
+      console.error("Room loading error:", roomError);
       setRoom(null);
+    } else {
+      setRoom(roomData);
     }
+  } else {
+    setRoom(null);
+  }
+} else {
+  setIsJoined(false);
+  setRoom(null);
+}
 
     const { data: resultData, error: resultError } =
       await supabase
@@ -233,95 +424,179 @@ if (!tournamentData) {
     setLoading(false);
   }
 
-  async function handleJoin() {
-    setMessage("");
-    setJoining(true);
+ async function handleJoin() {
+  setMessage("");
+  setJoining(true);
 
-    if (!tournament) {
-      setJoining(false);
-      return;
-    }
+  if (!tournament) {
+    setJoining(false);
+    return;
+  }
 
-    if (tournament.status !== "upcoming") {
-      setMessage("This tournament is not open for joining.");
-      setJoining(false);
-      return;
-    }
+  if (tournament.status !== "upcoming") {
+    setMessage("This tournament is not open for joining.");
+    setJoining(false);
+    return;
+  }
 
-    if (tournament.registration_status === "closed") {
-      setMessage("Registration for this tournament is closed.");
-      setJoining(false);
-      return;
-    }
+  /*
+    Always check the latest tournament format directly
+    from Supabase before deciding how the player joins.
+  */
+  const {
+    data: latestTournament,
+    error: latestTournamentError,
+  } = await supabase
+    .from("tournaments")
+    .select(
+      "id, format, max_players, registration_status"
+    )
+    .eq("id", tournamentId)
+    .maybeSingle();
 
-    if (players.length >= tournament.max_players) {
-      setMessage("This tournament is full.");
-      setJoining(false);
-      return;
-    }
+  if (latestTournamentError || !latestTournament) {
+    console.error(
+      "Latest tournament loading error:",
+      latestTournamentError
+    );
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setMessage("Please login before joining.");
-      setJoining(false);
-      return;
-    }
-
-    const { data: profile, error: profileError } =
-      await supabase
-        .from("profiles")
-        .select("username, game_id")
-        .eq("id", user.id)
-        .maybeSingle();
-
-    if (profileError || !profile) {
-      console.error("Profile error:", profileError);
-      setMessage("Your player profile could not be found.");
-      setJoining(false);
-      return;
-    }
-
-    const { error } = await supabase
-      .from("tournament_players")
-      .insert({
-        tournament_id: tournamentId,
-        player_id: user.id,
-        username: profile.username,
-        game_id: profile.game_id,
-      });
-
-    if (error) {
-      if (error.code === "23505") {
-        setMessage("You have already joined this tournament.");
-      } else {
-        console.error("Join error:", error);
-        setMessage("Unable to join tournament.");
-      }
-
-      setJoining(false);
-      return;
-    }
-
-    setMessage("You joined the tournament successfully! 🏆");
-
-    const newPlayerCount = players.length + 1;
-
-    if (newPlayerCount >= tournament.max_players) {
-      await supabase
-        .from("tournaments")
-        .update({
-          registration_status: "closed",
-        })
-        .eq("id", tournamentId);
-    }
-
-    await loadTournament();
+    setMessage(
+      "Unable to verify tournament details."
+    );
 
     setJoining(false);
+    return;
   }
+
+  console.log(
+    "JOIN FORMAT CHECK:",
+    latestTournament.format
+  );
+
+  /*
+    SQUAD TOURNAMENT
+    Never insert into tournament_players.
+    Send the player to the squad flow instead.
+  */
+  if (latestTournament.format === "squad") {
+    router.push(
+      `/tournaments/${tournamentId}/squad`
+    );
+
+    setJoining(false);
+    return;
+  }
+
+  /*
+    SOLO TOURNAMENT
+    Continue with the existing individual-player flow.
+  */
+
+  if (
+    latestTournament.registration_status ===
+    "closed"
+  ) {
+    setMessage(
+      "Registration for this tournament is closed."
+    );
+
+    setJoining(false);
+    return;
+  }
+
+  if (
+    players.length >= latestTournament.max_players
+  ) {
+    setMessage("This tournament is full.");
+    setJoining(false);
+    return;
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    setMessage("Please login before joining.");
+    setJoining(false);
+    return;
+  }
+
+  const {
+    data: profile,
+    error: profileError,
+  } = await supabase
+    .from("profiles")
+    .select("username, game_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profileError || !profile) {
+    console.error(
+      "Profile error:",
+      profileError
+    );
+
+    setMessage(
+      "Your player profile could not be found."
+    );
+
+    setJoining(false);
+    return;
+  }
+
+  const { error } = await supabase
+    .from("tournament_players")
+    .insert({
+      tournament_id: tournamentId,
+      player_id: user.id,
+      username: profile.username,
+      game_id: profile.game_id,
+    });
+
+  if (error) {
+    if (error.code === "23505") {
+      setMessage(
+        "You have already joined this tournament."
+      );
+    } else {
+      console.error(
+        "Join error:",
+        error
+      );
+
+      setMessage(
+        "Unable to join tournament."
+      );
+    }
+
+    setJoining(false);
+    return;
+  }
+
+  setMessage(
+    "You joined the tournament successfully! 🏆"
+  );
+
+  const newPlayerCount =
+    players.length + 1;
+
+  if (
+    newPlayerCount >=
+    latestTournament.max_players
+  ) {
+    await supabase
+      .from("tournaments")
+      .update({
+        registration_status: "closed",
+      })
+      .eq("id", tournamentId);
+  }
+
+  await loadTournament();
+
+  setJoining(false);
+}
 
   if (loading) {
     return (
@@ -439,6 +714,71 @@ if (!tournamentData) {
           </p>
 
         </section>
+     {/* Winning Squad */}
+
+{tournament.format === "squad" && winningSquad && (
+  <section className="mb-10 rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-6">
+
+    <div className="flex flex-wrap items-center justify-between gap-4">
+
+      <div>
+        <p className="text-sm font-bold uppercase tracking-widest text-yellow-400">
+          🏆 Tournament Winner
+        </p>
+
+        <h2 className="mt-2 text-3xl font-black text-white">
+          {winningSquad.squad_name}
+        </h2>
+
+        <p className="mt-2 text-gray-400">
+          This squad has been officially declared the winner.
+        </p>
+      </div>
+
+      <span className="rounded-full border border-yellow-400/20 bg-yellow-400/10 px-4 py-2 text-sm font-black text-yellow-400">
+        🏆 WINNER
+      </span>
+
+    </div>
+
+    {winningSquadPlayers.length > 0 && (
+      <div className="mt-6 overflow-hidden rounded-2xl border border-white/10">
+
+        <div className="grid grid-cols-[60px_1fr_1fr_100px] gap-4 border-b border-white/10 bg-black/20 px-4 py-3 text-xs font-black uppercase tracking-wider text-gray-400">
+          <div>#</div>
+          <div>Player</div>
+          <div>BGMI ID</div>
+          <div className="text-center">Kills</div>
+        </div>
+
+        {winningSquadPlayers.map((player) => (
+          <div
+            key={player.id}
+            className="grid grid-cols-[60px_1fr_1fr_100px] gap-4 border-b border-white/5 px-4 py-4 last:border-b-0"
+          >
+            <div className="font-black text-yellow-400">
+              {player.player_slot}
+            </div>
+
+            <div className="font-bold text-white">
+              {player.player_name}
+            </div>
+
+            <div className="break-all text-gray-300">
+              {player.game_id}
+            </div>
+
+            <div className="text-center text-xl font-black text-green-400">
+              {player.kills}
+            </div>
+          </div>
+        ))}
+
+      </div>
+    )}
+
+  </section>
+)}
 
         {/* Leaderboard */}
 
@@ -576,6 +916,19 @@ if (!tournamentData) {
             </h2>
 
             <div className="mt-6 grid grid-cols-2 gap-4">
+                            <div className="rounded-xl bg-black/20 p-4">
+
+                <p className="text-xs text-gray-500">
+                  Format
+                </p>
+
+                <p className="mt-1 text-xl font-black text-green-400">
+                  {tournament.format === "squad"
+                    ? "Squad"
+                    : "Solo"}
+                </p>
+
+              </div>
 
               <div className="rounded-xl bg-black/20 p-4">
 
@@ -681,37 +1034,71 @@ if (!tournamentData) {
 
             </div>
 
-            <button
-              onClick={handleJoin}
-              disabled={
-                joining ||
-                isJoined ||
-                isFull ||
-                tournament.status !== "upcoming" ||
-                tournament.registration_status === "closed"
-              }
-              className={`mt-6 w-full rounded-xl py-4 font-black transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                isJoined
-                  ? "bg-gray-600 text-white"
-                  : "bg-green-400 text-black hover:bg-green-300"
-              }`}
-            >
-
-              {isJoined
-                ? "Already Joined"
-                : tournament.registration_status === "closed"
-                ? "Registration Closed"
-                : isFull
-                ? "Tournament Full"
-                : tournament.status === "live"
-                ? "Tournament Live"
-                : tournament.status === "completed"
-                ? "Tournament Completed"
-                : joining
-                ? "Joining..."
-                : "Join Tournament"}
-
-            </button>
+{isJoined &&
+tournament.format === "squad" &&
+isSquadCaptain &&
+captainSquadId ? (
+  <button
+    onClick={() => {
+      window.location.href = `/tournaments/${tournamentId}/squad/${captainSquadId}`;
+    }}
+    className="mt-6 w-full rounded-xl bg-green-400 py-4 font-black text-black transition hover:bg-green-300"
+  >
+    🎮 Manage Squad
+  </button>
+) : isJoined &&
+  tournament.format === "squad" &&
+  memberSquadId ? (
+  <button
+    onClick={() => {
+      window.location.href = `/tournaments/${tournamentId}/squad/${memberSquadId}`;
+    }}
+    className="mt-6 w-full rounded-xl bg-green-400 py-4 font-black text-black transition hover:bg-green-300"
+  >
+    👥 Open Squad
+  </button>
+) : (
+  <button
+    onClick={handleJoin}
+    disabled={
+      joining ||
+      isFull ||
+      tournament.status !== "upcoming" ||
+      tournament.registration_status === "closed"
+    }
+    className={`mt-6 w-full rounded-xl py-4 font-black transition disabled:cursor-not-allowed disabled:opacity-50 ${
+      isJoined
+        ? "bg-gray-600 text-white"
+        : "bg-green-400 text-black hover:bg-green-300"
+    }`}
+  >
+    {tournament.format === "squad"
+      ? tournament.registration_status === "closed"
+        ? "Registration Closed"
+        : isFull
+        ? "Tournament Full"
+        : tournament.status === "live"
+        ? "Tournament Live"
+        : tournament.status === "completed"
+        ? "Tournament Completed"
+        : joining
+        ? "Opening Squad..."
+        : "Join / Create Squad"
+      : isJoined
+      ? "✓ Already Joined"
+      : tournament.registration_status === "closed"
+      ? "Registration Closed"
+      : isFull
+      ? "Tournament Full"
+      : tournament.status === "live"
+      ? "Tournament Live"
+      : tournament.status === "completed"
+      ? "Tournament Completed"
+      : joining
+      ? "Joining..."
+      : "Join Tournament"}
+  </button>
+)}
 
           </div>
 
@@ -759,70 +1146,75 @@ if (!tournamentData) {
               </div>
             )}
 
-            <div className="flex items-center justify-between">
+           {!tournament.is_private && (
+  <>
+    <div className="flex items-center justify-between">
 
-              <h2 className="text-xl font-black">
-                Registered Players
-              </h2>
+      <h2 className="text-xl font-black">
+        Registered Players
+      </h2>
 
-              <span className="rounded-full bg-green-400/10 px-3 py-1 text-sm font-bold text-green-400">
-                {players.length}
-              </span>
+      <span className="rounded-full bg-green-400/10 px-3 py-1 text-sm font-bold text-green-400">
+        {players.length}
+      </span>
 
-            </div>
+    </div>
 
-            {players.length === 0 ? (
+    {players.length === 0 ? (
 
-              <div className="mt-6 rounded-xl bg-black/20 p-8 text-center">
+      <div className="mt-6 rounded-xl bg-black/20 p-8 text-center">
 
-                <div className="text-3xl">
-                  👤
-                </div>
+        <div className="text-3xl">
+          👤
+        </div>
 
-                <p className="mt-3 text-gray-500">
-                  No players have joined yet.
+        <p className="mt-3 text-gray-500">
+          No players have joined yet.
+        </p>
+
+      </div>
+
+    ) : (
+
+      <div className="mt-5 space-y-3">
+
+        {players.map((player, index) => (
+
+          <div
+            key={player.id}
+            className="flex items-center justify-between rounded-xl bg-black/20 p-4"
+          >
+
+            <div className="flex items-center gap-3">
+
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-400 font-black text-black">
+                {index + 1}
+              </div>
+
+              <div>
+
+                <p className="font-bold">
+                  {player.username}
+                </p>
+
+                <p className="text-xs text-gray-500">
+                  ID: {player.game_id}
                 </p>
 
               </div>
 
-            ) : (
+            </div>
 
-              <div className="mt-5 space-y-3">
+          </div>
 
-                {players.map((player, index) => (
+        ))}
 
-                  <div
-                    key={player.id}
-                    className="flex items-center justify-between rounded-xl bg-black/20 p-4"
-                  >
+      </div>
 
-                    <div className="flex items-center gap-3">
+    )}
 
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-400 font-black text-black">
-                        {index + 1}
-                      </div>
-
-                      <div>
-
-                        <p className="font-bold">
-                          {player.username}
-                        </p>
-
-                        <p className="text-xs text-gray-500">
-                          ID: {player.game_id}
-                        </p>
-
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                ))}
-
-              </div>
-
-            )}
+  </>
+)}
 
           </div>
 

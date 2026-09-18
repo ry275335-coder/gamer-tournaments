@@ -11,6 +11,7 @@ type Tournament = {
   id: string;
   title: string;
   game: string;
+  format: "solo" | "squad";
   entry_fee: number;
   prize_pool: number;
   max_players: number;
@@ -47,6 +48,7 @@ export default function AdminPage() {
 
   const [title, setTitle] = useState("");
   const [game, setGame] = useState("BGMI");
+  const [format, setFormat] = useState<"solo" | "squad">("solo");
   const [entryFee, setEntryFee] = useState("");
   const [prizePool, setPrizePool] = useState("");
   const [maxPlayers, setMaxPlayers] = useState("100");
@@ -68,6 +70,8 @@ export default function AdminPage() {
   const [resultPosition, setResultPosition] = useState("1");
   const [resultPrize, setResultPrize] = useState("");
   const [savingResult, setSavingResult] = useState(false);
+
+  const [recentWinners, setRecentWinners] = useState<any[]>([]);
 
   const tournamentsPerPage = 5;
 
@@ -127,10 +131,10 @@ export default function AdminPage() {
     async function checkUser() {
       const { data } = await supabase.auth.getUser();
 
-      if (!data.user) {
-        window.location.href = "/login";
-        return;
-      }
+    if (!data.user) {
+  setLoading(false);
+  return;
+}
 
       const ADMIN_USER_ID =
         "6431960a-b0c6-4e2a-8b1a-d5017ceae103";
@@ -145,6 +149,7 @@ export default function AdminPage() {
 
       loadTournaments();
       loadPlayers();
+      loadRecentWinners();
     }
 
     checkUser();
@@ -222,6 +227,60 @@ export default function AdminPage() {
     setLoadingPlayers(false);
   }
 
+  async function loadRecentWinners() {
+    const { data, error } = await supabase
+      .from("tournament_results")
+      .select(`
+        id,
+        username,
+        position,
+        prize,
+        tournament_id,
+        created_at,
+        tournaments (
+          title,
+          game
+        )
+      `)
+      .eq("position", 1)
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error("Recent winners loading error:", error);
+      return;
+    }
+
+    setRecentWinners(data || []);
+  }
+
+  async function removeRecentWinner(resultId: string) {
+    const confirmed = window.confirm(
+      "Are you sure you want to remove this winner from Recent Winners?"
+    );
+
+    if (!confirmed) return;
+
+    setMessage("");
+
+    const { error } = await supabase
+      .from("tournament_results")
+      .delete()
+      .eq("id", resultId);
+
+    if (error) {
+      console.error("Remove recent winner error:", error);
+      setMessage(`Unable to remove winner: ${error.message}`);
+      return;
+    }
+
+    setRecentWinners((current) =>
+      current.filter((winner) => winner.id !== resultId)
+    );
+
+    setMessage("Recent winner removed successfully.");
+  }
+
   function generateAccessNumber() {
     return Math.floor(
       100000 + Math.random() * 900000
@@ -264,6 +323,7 @@ export default function AdminPage() {
       .insert({
         title,
         game,
+        format,
         entry_fee: Number(entryFee),
         prize_pool: Number(prizePool),
         max_players: Number(maxPlayers),
@@ -314,6 +374,7 @@ export default function AdminPage() {
 
     setTitle("");
     setGame("BGMI");
+    setFormat("solo");
     setEntryFee("");
     setPrizePool("");
     setMaxPlayers("100");
@@ -361,6 +422,7 @@ export default function AdminPage() {
 
     setTitle(tournament.title);
     setGame(tournament.game);
+    setFormat(tournament.format || "solo");
     setEntryFee(String(tournament.entry_fee));
     setPrizePool(String(tournament.prize_pool));
     setMaxPlayers(String(tournament.max_players));
@@ -439,6 +501,7 @@ export default function AdminPage() {
       .update({
         title,
         game,
+        format,
         entry_fee: Number(entryFee),
         prize_pool: Number(prizePool),
         max_players: Number(maxPlayers),
@@ -534,28 +597,119 @@ export default function AdminPage() {
     );
   }
 
-  if (!user) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
-        <div className="text-center">
-          <h1 className="text-3xl font-black">
-            Admin Access
+ if (!user) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
+      <div className="w-full max-w-md">
+        <div className="mb-8 text-center">
+          <a
+            href="/"
+            className="text-3xl font-black tracking-tight text-green-400 no-underline"
+          >
+            GAMEARENA
+          </a>
+
+          <h1 className="mt-8 text-3xl font-black">
+            Admin Login
           </h1>
 
           <p className="mt-3 text-gray-400">
-            Please login to access the admin dashboard.
+            Login with your administrator account.
           </p>
+        </div>
+
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+
+            const form = e.currentTarget;
+            const emailInput =
+              form.elements.namedItem("email") as HTMLInputElement;
+            const passwordInput =
+              form.elements.namedItem("password") as HTMLInputElement;
+
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+              alert("Please enter your email and password.");
+              return;
+            }
+
+            const { data, error } =
+              await supabase.auth.signInWithPassword({
+                email,
+                password,
+              });
+
+            if (error || !data.user) {
+              alert(
+                "Incorrect email or password. Please try again."
+              );
+              return;
+            }
+
+            const ADMIN_USER_ID =
+              "6431960a-b0c6-4e2a-8b1a-d5017ceae103";
+
+            if (data.user.id !== ADMIN_USER_ID) {
+              await supabase.auth.signOut();
+
+              alert(
+                "This account is not authorized for Admin Login."
+              );
+
+              return;
+            }
+
+            window.location.reload();
+          }}
+          className="rounded-2xl border border-white/10 bg-white/5 p-6"
+        >
+          <div>
+            <label className="text-sm font-semibold text-gray-300">
+              Email Address
+            </label>
+
+            <input
+              name="email"
+              type="email"
+              placeholder="Enter admin email"
+              className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none placeholder:text-gray-600 focus:border-green-400"
+            />
+          </div>
+
+          <div className="mt-5">
+            <label className="text-sm font-semibold text-gray-300">
+              Password
+            </label>
+
+            <input
+              name="password"
+              type="password"
+              placeholder="Enter admin password"
+              className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none placeholder:text-gray-600 focus:border-green-400"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="mt-6 w-full rounded-xl bg-green-500 px-6 py-3 font-bold text-black transition hover:bg-green-400"
+          >
+            Admin Login
+          </button>
 
           <a
-            href="/login"
-            className="mt-6 inline-block rounded-xl bg-green-500 px-6 py-3 font-bold text-black no-underline"
+            href="/"
+            className="mt-4 block text-center text-sm text-gray-500 transition hover:text-white"
           >
-            Login
+            ← Back to GameArena
           </a>
-        </div>
-      </main>
-    );
-  }
+        </form>
+      </div>
+    </main>
+  );
+}
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -687,6 +841,30 @@ export default function AdminPage() {
 
                 <option value="Valorant">
                   Valorant
+                </option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm font-semibold text-gray-300">
+                Tournament Format
+              </label>
+
+              <select
+                value={format}
+                onChange={(e) =>
+                  setFormat(
+                    e.target.value as "solo" | "squad"
+                  )
+                }
+                className="mt-2 w-full rounded-xl border border-white/10 bg-black px-4 py-3 text-white outline-none focus:border-green-400"
+              >
+                <option value="solo">
+                  Solo / Individual
+                </option>
+
+                <option value="squad">
+                  Squad / Team
                 </option>
               </select>
             </div>
@@ -1347,6 +1525,69 @@ export default function AdminPage() {
                   </button>
                 </div>
               )}
+            </div>
+          )}
+        </div>
+
+        {/* Recent Winners */}
+        <div className="mt-16">
+          <h2 className="text-2xl font-black">
+            🏆 Recent Winners
+          </h2>
+
+          <p className="mt-2 text-gray-400">
+            Winners currently shown on the public GameArena homepage.
+          </p>
+
+          {recentWinners.length === 0 ? (
+            <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6 text-gray-400">
+              No recent winners found.
+            </div>
+          ) : (
+            <div className="mt-6 space-y-4">
+              {recentWinners.map((winner) => {
+                const tournamentData = Array.isArray(winner.tournaments)
+                  ? winner.tournaments[0]
+                  : winner.tournaments;
+
+                return (
+                  <div
+                    key={winner.id}
+                    className="flex flex-col gap-4 rounded-2xl border border-yellow-400/20 bg-yellow-400/[0.04] p-5 md:flex-row md:items-center md:justify-between"
+                  >
+                    <div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <h3 className="text-xl font-black">
+                          {winner.username}
+                        </h3>
+
+                        <span className="rounded-full bg-yellow-400/10 px-3 py-1 text-xs font-black text-yellow-400">
+                          #1 Winner
+                        </span>
+                      </div>
+
+                      <p className="mt-2 text-sm text-gray-400">
+                        {tournamentData?.title || "Tournament"}
+                        {tournamentData?.game
+                          ? ` • ${tournamentData.game}`
+                          : ""}
+                      </p>
+
+                      <p className="mt-2 text-sm font-bold text-green-400">
+                        Prize: ₹{winner.prize || 0}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => removeRecentWinner(winner.id)}
+                      className="rounded-xl bg-red-500/10 px-4 py-2 text-sm font-bold text-red-400 hover:bg-red-500/20"
+                    >
+                      Remove Winner
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
