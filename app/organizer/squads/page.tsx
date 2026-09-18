@@ -1,6 +1,9 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import {
+  Suspense,
+  useEffect,
+  useState,
+} from "react";
 import {
   useRouter,
   useSearchParams,
@@ -39,7 +42,7 @@ type SquadPlayer = {
   verification_status: string;
 };
 
-export default function OrganizerSquadsPage() {
+function OrganizerSquadsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -1473,5 +1476,12 @@ async function declareWinner(
       </div>
 
     </main>
+  );
+}
+export default function OrganizerSquadsPage() {
+  return (
+    <Suspense fallback={null}>
+      <OrganizerSquadsPageContent />
+    </Suspense>
   );
 }
