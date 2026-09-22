@@ -92,6 +92,7 @@ export default function TournamentDetailsPage() {
   const [joining, setJoining] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
   const [organizer, setOrganizer] = useState<OrganizerProfile | null>(null);
+  const [enteredAccessCode, setEnteredAccessCode] = useState("");
 
   useEffect(() => {
     loadTournament();
@@ -296,9 +297,8 @@ export default function TournamentDetailsPage() {
     }
 
     if (tournament.scope === "intra" && tournament.access_code) {
-      const code = typeof window !== "undefined" ? window.prompt("This is an Intra-College tournament. Please enter your College Access Code:") : null;
-      if (!code || code.trim().toLowerCase() !== tournament.access_code.trim().toLowerCase()) {
-        setMessage("Invalid or missing college access code. Only students with the code can join.");
+      if (!enteredAccessCode.trim() || enteredAccessCode.trim().toLowerCase() !== tournament.access_code.trim().toLowerCase()) {
+        setMessage("Please enter the correct College Access Code in the field above to join.");
         setJoining(false);
         return;
       }
@@ -748,6 +748,25 @@ export default function TournamentDetailsPage() {
               </p>
               <p className="mt-1 text-xl font-bold text-green-600">{timeLeft}</p>
             </div>
+
+            {/* Campus Access Code Input for Intra-College */}
+            {tournament.scope === "intra" && tournament.access_code && !isJoined && (
+              <div className="mt-3 rounded-lg border border-purple-200 bg-purple-50 p-3">
+                <label className="block text-xs font-semibold text-purple-900">
+                  🏫 Campus Access Code Required
+                </label>
+                <p className="mt-0.5 text-xs text-purple-700">
+                  This tournament is restricted to students from this institution. Enter the access code provided by your organizer:
+                </p>
+                <input
+                  type="text"
+                  value={enteredAccessCode}
+                  onChange={(e) => setEnteredAccessCode(e.target.value)}
+                  placeholder="Enter college access code"
+                  className="mt-2 w-full rounded-lg border border-purple-300 bg-white px-3 py-2 text-sm text-black outline-none placeholder:text-gray-400 focus:border-purple-600"
+                />
+              </div>
+            )}
 
             {/* Join Button */}
             {isJoined && tournament.format === "squad" && isSquadCaptain && captainSquadId ? (
