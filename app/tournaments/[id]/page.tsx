@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { createTournamentReport, logTournamentShare } from "@/lib/supabase";
 
 type Tournament = {
   id: string;
@@ -36,6 +37,23 @@ type Player = {
 type TournamentRoom = {
   room_id: string;
   room_password: string;
+};
+
+type TournamentReport = {
+  id: string;
+  tournament_id: string;
+  reported_by?: string;
+  reason: string;
+  status: 'pending' | 'reviewed' | 'dismissed' | 'confirmed';
+  created_at: string;
+  updated_at: string;
+};
+
+type TournamentShareLog = {
+  id: string;
+  tournament_id: string;
+  shared_to_platform: 'whatsapp' | 'instagram' | 'facebook' | 'twitter';
+  shared_at: string;
 };
 
 export default function TournamentDetailsPage() {
@@ -298,11 +316,29 @@ export default function TournamentDetailsPage() {
   }
 
   function handleShare() {
-    const url = window.location.href;
-    navigator.clipboard.writeText(url).then(() => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
       setShareMessage("Link copied to clipboard!");
       setTimeout(() => setShareMessage(""), 2000);
     });
+  }
+
+  async function handleReport() {
+    if (!tournament) return;
+    const reason = prompt('Please provide a reason for reporting this tournament:');
+    if (reason && reason.trim()) {
+      try {
+        await createTournamentReport({
+          tournament_id: tournament.id,
+          reason: reason.trim(),
+        });
+        setShareMessage('Tournament reported successfully!');
+        setTimeout(() => setShareMessage(""), 3000);
+      } catch (err) {
+        console.error('Error reporting tournament:', err);
+        setShareMessage('Failed to report. Please try again.');
+        setTimeout(() => setShareMessage(""), 3000);
+      }
+    }
   }
 
   if (loading) {
@@ -379,12 +415,50 @@ export default function TournamentDetailsPage() {
           </a>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleShare}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-            >
-              📤 Share
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  // WhatsApp share
+                  const url = window.location.href;
+                  const text = `Check out this tournament: ${tournament?.title}`;
+                  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`;
+                  window.open(whatsappUrl, '_blank');
+                }}
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              >
+                WhatsApp
+              </button>
+              <button
+                onClick={() => {
+                  // Instagram share (simply open Instagram with a pre-filled message? Actually we can't deep link, so just open Instagram)
+                  window.open('https://instagram.com', '_blank');
+                }}
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              >
+                Instagram
+              </button>
+              <button
+                onClick={async () => {
+                  if (!tournament) return;
+                  const reason = window.alert ? prompt('Please provide a reason for reporting this tournament:') : '';
+                  if (reason && reason.trim()) {
+                    try {
+                      await createTournamentReport({
+                        tournament_id: tournament.id,
+                        reason: reason.trim(),
+                      });
+                      alert('Tournament reported successfully!');
+                    } catch (err) {
+                      console.error('Error reporting tournament:', err);
+                      alert('Failed to report tournament. Please try again.');
+                    }
+                  }
+                }}
+                className="rounded-lg border border-red-300 px-3 py-2 text-sm font-medium text-red-600 transition hover:border-red-500 hover:text-red-600"
+              >
+                Report
+              </button>
+            </div>
 
             <a
               href="/dashboard"

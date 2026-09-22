@@ -22,6 +22,26 @@ type Tournament = {
   room_password: string | null;
 };
 
+type CollegeVerification = {
+  id: string;
+  user_id: string;
+  college_name: string;
+  student_id_image_url?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  updated_at: string;
+};
+
+type TournamentReport = {
+  id: string;
+  tournament_id: string;
+  reported_by?: string;
+  reason: string;
+  status: 'pending' | 'reviewed' | 'dismissed' | 'confirmed';
+  created_at: string;
+  updated_at: string;
+};
+
 export default function AdminPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -69,6 +89,16 @@ export default function AdminPage() {
   const [savingResult, setSavingResult] = useState(false);
 
   const [recentWinners, setRecentWinners] = useState<any[]>([]);
+
+  // College verification state
+  const [collegeVerifications, setCollegeVerifications] = useState<CollegeVerification[]>([]);
+  const [loadingVerifications, setLoadingVerifications] = useState(true);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+
+  // Tournament reports state
+  const [tournamentReports, setTournamentReports] = useState<TournamentReport[]>([]);
+  const [loadingReports, setLoadingReports] = useState(true);
+  const [reportsError, setReportsError] = useState<string | null>(null);
 
   const tournamentsPerPage = 5;
 
@@ -146,6 +176,8 @@ export default function AdminPage() {
       loadTournaments();
       loadPlayers();
       loadRecentWinners();
+      loadCollegeVerifications();
+      loadTournamentReports();
     }
 
     checkUser();
@@ -247,6 +279,46 @@ export default function AdminPage() {
     setRecentWinners(data || []);
   }
 
+  async function loadCollegeVerifications() {
+    setLoadingVerifications(true);
+    setVerificationError(null);
+
+    const { data, error } = await supabase
+      .from('college_verifications')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading college verifications:', error);
+      setVerificationError('Failed to load verification requests');
+      setLoadingVerifications(false);
+      return;
+    }
+
+    setCollegeVerifications(data || []);
+    setLoadingVerifications(false);
+  }
+
+  async function loadTournamentReports() {
+    setLoadingReports(true);
+    setReportsError(null);
+
+    const { data, error } = await supabase
+      .from('tournament_reports')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading tournament reports:', error);
+      setReportsError('Failed to load tournament reports');
+      setLoadingReports(false);
+      return;
+    }
+
+    setTournamentReports(data || []);
+    setLoadingReports(false);
+  }
+
   async function removeRecentWinner(resultId: string) {
     const confirmed = window.confirm(
       "Are you sure you want to remove this winner from Recent Winners?"
@@ -325,6 +397,7 @@ export default function AdminPage() {
         is_private: isPrivate,
         access_number: finalAccessNumber,
         access_password: finalAccessPassword,
+        college_id: data.user.id, // Set the organizer's user ID as college_id
       })
       .select()
       .single();
@@ -1379,6 +1452,164 @@ export default function AdminPage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+
+        {/* College Verifications Section */}
+        <div className="mt-10">
+          <h2 className="text-xl font-bold">Organizer Applications</h2>
+          <p className="mt-1 text-sm text-gray-600">Review and approve college organizer verification requests.</p>
+
+          {loadingVerifications ? (
+            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-6 text-center">
+              Loading organizer applications...
+            </div>
+          ) : verificationError ? (
+            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-6 text-center text-red-700">
+              {verificationError}
+            </div>
+          ) : collegeVerifications.length === 0 ? (
+            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-6 text-center">
+              No organizer applications pending.
+            </div>
+          ) : (
+            <div className="mt-4 space-y-4">
+              {collegeVerifications.map((verification) => (
+                <div
+                  key={verification.id}
+                  className="rounded-lg border border-gray-200 bg-white p-5"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h3 className="text-lg font-semibold">{verification.college_name}</h3>
+                      <p className="text-sm text-gray-600">
+                        Submitted by: {verification.user_id}
+                      </p>
+                    </div>
+                    <span
+                      className={`px-3 py-1 text-xs font-medium rounded-full ${
+                        verification.status === "pending"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : verification.status === "approved"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {verification.status.charAt(0).toUpperCase() + verification.status.slice(1)}
+                    </span>
+                  </div>
+
+                  {verification.student_id_image_url && (
+                    <div className="mt-4">
+                      <p className="mb-2 text-sm font-medium text-gray-700">College Logo:</p>
+                      <img
+                        src={verification.student_id_image_url}
+                        alt={`${verification.college_name} logo`}
+                        className="max-w-xs h-auto rounded border border-gray-200"
+                      />
+                    </div>
+                  )}
+
+                  {verification.status === "pending" && (
+                    <div className="mt-4 flex gap-3">
+                      <button
+                        onClick={() =>
+                          updateCollegeVerificationStatus(verification.id, "approved")
+                            .then(() => {
+                              setVerificationError(null);
+                              loadCollegeVerifications(); // Refresh the list
+                            })
+                            .catch((error) => {
+                              setVerificationError("Failed to approve verification");
+                              console.error(error);
+                            })}
+                        className="flex-1 rounded-lg bg-green-600 py-2.5 font-medium text-white transition hover:bg-green-500"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() =>
+                          updateCollegeVerificationStatus(verification.id, "rejected")
+                            .then(() => {
+                              setVerificationError(null);
+                              loadCollegeVerifications(); // Refresh the list
+                            })
+                            .catch((error) => {
+                              setVerificationError("Failed to reject verification");
+                              console.error(error);
+                            })}
+                        className="flex-1 rounded-lg border border-red-300 py-2.5 font-medium text-red-600 transition hover:border-red-500 hover:text-red-600"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Tournament Reports Section */}
+        <div className="mt-10">
+          <h2 className="text-xl font-bold">Tournament Reports</h2>
+          <p className="mt-1 text-sm text-gray-600">Review reports of spam, fake, or inappropriate tournaments.</p>
+
+          {loadingReports ? (
+            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-6 text-center">
+              Loading tournament reports...
+            </div>
+          ) : reportsError ? (
+            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-6 text-center text-red-700">
+              {reportsError}
+            </div>
+          ) : tournamentReports.length === 0 ? (
+            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-6 text-center">
+              No tournament reports found.
+            </div>
+          ) : (
+            <div className="mt-4 space-y-4">
+              {tournamentReports.map((report) => (
+                <div
+                  key={report.id}
+                  className="rounded-lg border border-gray-200 bg-white p-5"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h3 className="text-lg font-semibold">Tournament Report</h3>
+                      <p className="text-sm text-gray-600">
+                        Reported on: {new Date(report.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <span
+                      className={`px-3 py-1 text-xs font-medium rounded-full ${
+                        report.status === "pending"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : report.status === "reviewed"
+                            ? "bg-blue-100 text-blue-800"
+                            : report.status === "dismissed"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-green-100 text-green-800"
+                      }`}
+                    >
+                      {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-700">Reason:</span>
+                      <p className="text-sm text-gray-600">{report.reason}</p>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-700">Reported by:</span>
+                      <p className="text-sm text-gray-600">{report.reported_by || "Anonymous"}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

@@ -30,6 +30,30 @@ type PlayerResult = {
   tournament_id: string;
 };
 
+type CollegeVerification = {
+  id: string;
+  user_id: string;
+  college_name: string;
+  student_id_image_url?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  updated_at: string;
+};
+
+type CollegeTournament = {
+  id: string;
+  title: string;
+  game: string;
+  entry_fee: number;
+  prize_pool: number;
+  start_time: string;
+  end_time: string;
+  status: string;
+  player_count: number;
+  max_players: number;
+  countdown: string;
+};
+
 export default function DashboardPage() {
   const router = useRouter();
 
@@ -38,6 +62,7 @@ export default function DashboardPage() {
     JoinedTournament[]
   >([]);
   const [results, setResults] = useState<PlayerResult[]>([]);
+  const [collegeTournaments, setCollegeTournaments] = useState<CollegeTournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -72,6 +97,95 @@ export default function DashboardPage() {
       }
 
       setProfile(profileData);
+
+      // Load college verification status
+      const { data: verificationData } = await supabase
+        .from('college_verifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      // Load college tournaments if user is verified organizer
+      let collegeTournaments: CollegeTournament[] = [];
+      if (verificationData && verificationData.status === 'approved') {
+        const { data: tournamentData, error: tournamentError } = await supabase
+          .from('tournaments')
+          .select(`
+            id,
+            title,
+            game,
+            entry_fee,
+            prize_pool,
+            start_time,
+            end_time,
+            status,
+            max_players
+          `)
+          .eq('college_id', user.id)
+          .order('start_time', { ascending: true });
+
+        if (!error && tournamentData) {
+          // Get player counts for each tournament
+          const tournamentsWithCount = await Promise.all(
+            tournamentData.map(async (tournament) => {
+              const { count } = await supabase
+                .from('tournament_players')
+                .select('*', { count: 'exact', head: true })
+                .eq('tournament_id', tournament.id);
+
+              const now = new Date();
+              const startTime = new Date(tournament.start_time);
+              const endTime = new Date(tournament.end_time);
+
+              let currentStatus = 'upcoming';
+              let difference = 0;
+
+              if (now >= endTime) {
+                currentStatus = 'completed';
+              } else if (now >= startTime) {
+                currentStatus = 'live';
+              }
+
+              if (now < startTime) {
+                difference = startTime.getTime() - now.getTime();
+              } else if (now < endTime) {
+                difference = endTime.getTime() - now.getTime();
+              }
+
+              let countdown = 'Tournament ended';
+
+              if (difference > 0) {
+                const days = Math.floor(
+                  difference / (1000 * 60 * 60 * 24)
+                );
+
+                const hours = Math.floor(
+                  (difference / (1000 * 60 * 60)) % 24
+                );
+
+                const minutes = Math.floor(
+                  (difference / (1000 * 60)) % 60
+                );
+
+                const seconds = Math.floor(
+                  (difference / 1000) % 60
+                );
+
+                countdown = `${days > 0 ? `${days}d ` : ''}${hours}h ${minutes}m ${seconds}s`;
+              }
+
+              return {
+                ...tournament,
+                status: currentStatus,
+                player_count: count || 0,
+                countdown,
+              };
+            })
+          );
+
+          collegeTournaments = tournamentsWithCount;
+        }
+      }
 
       const { data: joinedData, error: joinedError } = await supabase
         .from("tournament_players")
@@ -121,6 +235,7 @@ export default function DashboardPage() {
         }
 
         setJoinedTournaments(formattedTournaments);
+        setCollegeTournaments(collegeTournaments);
 
         const { data: resultData, error: resultError } = await supabase
           .from("tournament_results")
@@ -343,6 +458,54 @@ export default function DashboardPage() {
             </div>
           )}
         </section>
+
+        {/* My College Tournaments */}
+        {collegeTournaments.length > 0 && (
+          <section className="mt-10">
+            <h2 className="text-xl font-bold">My College Tournaments</h2>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              {collegeTournaments.map((tournament) => (
+                <div
+                  key={tournament.id}
+                  className="rounded-lg border border-gray-200 bg-white p-5 transition hover:border-green-300"
+                >
+                  <div className="mb-3 flex items-start justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-green-600">{tournament.game}</p>
+                      <h3 className="mt-1 font-semibold">{tournament.title}</h3>
+                    </div>
+                    <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-600">
+                      {tournament.status}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Entry Fee</span>
+                      <span className="font-medium">₹{tournament.entry_fee}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Prize Pool</span>
+                      <span className="font-medium text-green-600">₹{tournament.prize_pool}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Players</span>
+                      <span className="font-medium">{tournament.player_count} / {tournament.max_players}</span>
+                    </div>
+                  </div>
+
+                  <a
+                    href={`/tournaments/${tournament.id}`}
+                    className="mt-4 block w-full rounded-lg bg-green-600 py-2.5 text-center font-medium text-white no-underline transition hover:bg-green-500"
+                  >
+                    View Tournament
+                  </a>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Results */}
         {results.length > 0 && (
