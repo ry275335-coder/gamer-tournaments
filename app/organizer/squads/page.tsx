@@ -886,15 +886,9 @@ function OrganizerSquadsPageContent() {
                         </span>
                       </div>
 
-                      <div className="mt-5 rounded-lg border border-gray-200 bg-white p-4">
-                        <p className="text-sm font-bold">BGMI ID Screenshot</p>
-                        {!player.id_screenshot_url ? (
-                          <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-5 text-center">
-                            <div className="text-3xl">📸</div>
-                            <p className="mt-2 font-bold text-yellow-700">Screenshot not uploaded</p>
-                            <p className="mt-1 text-xs text-gray-500">Waiting for the player to upload their ID screenshot.</p>
-                          </div>
-                        ) : signedUrls[player.id] ? (
+                      {player.id_screenshot_url && signedUrls[player.id] && (
+                        <div className="mt-5 rounded-lg border border-gray-200 bg-white p-4">
+                          <p className="text-sm font-bold">BGMI ID Screenshot</p>
                           <div className="mt-4">
                             <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
                               <img
@@ -905,36 +899,29 @@ function OrganizerSquadsPageContent() {
                             </div>
                             <a href={signedUrls[player.id]} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-sm font-bold text-green-600 hover:text-green-700">Open full screenshot ↗</a>
                           </div>
-                        ) : (
-                          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-5 text-center">
-                            <p className="font-bold text-red-700">Unable to load screenshot</p>
-                            <p className="mt-1 text-xs text-gray-500">The file may have been removed or access is unavailable.</p>
-                          </div>
-                        )}
-                      </div>
-
-                      {player.id_screenshot_url && (
-                        <div className="mt-5">
-                          <p className="text-sm font-bold">Verification Decision</p>
-                          <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                            <button
-                              onClick={() => updateVerification(player, "pending")}
-                              disabled={reviewingPlayerId === player.id}
-                              className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm font-black text-yellow-700 transition hover:bg-yellow-100 disabled:opacity-50"
-                            >🟡 Pending</button>
-                            <button
-                              onClick={() => updateVerification(player, "approved")}
-                              disabled={reviewingPlayerId === player.id}
-                              className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-black text-green-700 transition hover:bg-green-100 disabled:opacity-50"
-                            >🟢 Approve</button>
-                            <button
-                              onClick={() => updateVerification(player, "rejected")}
-                              disabled={reviewingPlayerId === player.id}
-                              className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-black text-red-700 transition hover:bg-red-100 disabled:opacity-50"
-                            >🔴 Reject</button>
-                          </div>
                         </div>
                       )}
+
+                      <div className="mt-5">
+                        <p className="text-sm font-bold">Player Verification</p>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                          <button
+                            onClick={() => updateVerification(player, "pending")}
+                            disabled={reviewingPlayerId === player.id}
+                            className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm font-black text-yellow-700 transition hover:bg-yellow-100 disabled:opacity-50"
+                          >🟡 Pending</button>
+                          <button
+                            onClick={() => updateVerification(player, "approved")}
+                            disabled={reviewingPlayerId === player.id}
+                            className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-black text-green-700 transition hover:bg-green-100 disabled:opacity-50"
+                          >🟢 Approve</button>
+                          <button
+                            onClick={() => updateVerification(player, "rejected")}
+                            disabled={reviewingPlayerId === player.id}
+                            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-black text-red-700 transition hover:bg-red-100 disabled:opacity-50"
+                          >🔴 Reject</button>
+                        </div>
+                      </div>
                     </div>
                   );
                 })}

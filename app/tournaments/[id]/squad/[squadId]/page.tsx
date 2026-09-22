@@ -76,9 +76,6 @@ export default function ManageSquadPage() {
   const [saving, setSaving] =
     useState(false);
 
-  const [uploadingPlayerId, setUploadingPlayerId] =
-    useState<string | null>(null);
-
   const [message, setMessage] =
     useState("");
   const [isCaptain, setIsCaptain] = useState(false);
@@ -529,138 +526,6 @@ export default function ManageSquadPage() {
     setMessage("Player removed from squad.");
   }
 
-  async function uploadIdScreenshot(
-    event: ChangeEvent<HTMLInputElement>,
-    player: SquadPlayer
-  ) {
-    setMessage("");
-    setError("");
-
-    const file = event.target.files?.[0];
-
-    event.target.value = "";
-
-    if (!file) {
-      return;
-    }
-
-    if (!file.type.startsWith("image/")) {
-      setError(
-        "Please select an image file."
-      );
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      setError(
-        "The screenshot must be smaller than 10 MB."
-      );
-      return;
-    }
-
-    setUploadingPlayerId(player.id);
-
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        setError("Please login again.");
-        setUploadingPlayerId(null);
-        return;
-      }
-
-      if (user.id !== player.user_id) {
-        setError(
-          "Only the player can upload their own ID screenshot."
-        );
-        setUploadingPlayerId(null);
-        return;
-      }
-
-      const extension =
-        file.name.split(".").pop()?.toLowerCase() ||
-        "jpg";
-
-      const safeExtension =
-        extension.replace(/[^a-z0-9]/g, "") ||
-        "jpg";
-
-      const filePath =
-        `id-screenshots/${squadId}/${player.user_id}/${crypto.randomUUID()}.${safeExtension}`;
-
-      const {
-        error: uploadError,
-      } = await supabase.storage
-        .from("bgmi-evidence")
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-      if (uploadError) {
-        console.error(
-          "ID screenshot upload error:",
-          uploadError
-        );
-
-        setError(
-          "Unable to upload the ID screenshot."
-        );
-
-        setUploadingPlayerId(null);
-        return;
-      }
-
-      const {
-        error: updateError,
-      } = await supabase
-        .from("squad_players")
-        .update({
-          id_screenshot_url: filePath,
-          verification_status: "pending",
-        })
-        .eq("id", player.id)
-        .eq("user_id", user.id);
-
-      if (updateError) {
-        console.error(
-          "Screenshot path update error:",
-          updateError
-        );
-
-        await supabase.storage
-          .from("bgmi-evidence")
-          .remove([filePath]);
-
-        setError(
-          "The screenshot uploaded, but could not be linked to your player record."
-        );
-
-        setUploadingPlayerId(null);
-        return;
-      }
-
-      setMessage(
-        `${player.player_name}'s ID screenshot was uploaded successfully.`
-      );
-
-      await loadSquad();
-    } catch (uploadException) {
-      console.error(
-        "Unexpected screenshot upload error:",
-        uploadException
-      );
-
-      setError(
-        "Something went wrong while uploading the screenshot."
-      );
-    }
-
-    setUploadingPlayerId(null);
-  }
-
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-white text-black">
@@ -802,7 +667,15 @@ export default function ManageSquadPage() {
                                 <span className="rounded-lg bg-yellow-50 px-2.5 py-1 text-xs font-black text-yellow-700">👑 Captain</span>
                               )}
                             </div>
-                            <p className="text-sm text-gray-500">BGMI ID: {player.game_id}</p>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-sm text-gray-500">BGMI ID: {player.game_id}</p>
+                              {player.verification_status === "approved" && (
+                                <span className="rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-bold text-green-700">✓ Verified</span>
+                              )}
+                              {player.verification_status === "rejected" && (
+                                <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-bold text-red-700">✕ Rejected</span>
+                              )}
+                            </div>
                           </>
                         ) : (
                           <p className="mt-1 text-gray-500">Empty slot</p>
@@ -819,55 +692,6 @@ export default function ManageSquadPage() {
                           Remove
                         </button>
                       )}
-                  </div>
-                  <div className="mt-4">
-                    {player && (
-                      <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4">
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                          <div>
-                            <p className="text-sm font-bold">BGMI ID Screenshot</p>
-                            <p className="mt-1 text-xs text-gray-500">Upload a clear screenshot showing the player's BGMI name and ID.</p>
-                          </div>
-                          {player.user_id === currentUserId && (
-                            <label className="cursor-pointer rounded-lg bg-green-600 px-4 py-3 text-center text-sm font-black text-white transition hover:bg-green-50">
-                              {uploadingPlayerId === player.id
-                                ? "Uploading..."
-                                : player.id_screenshot_url
-                                ? "Replace Screenshot"
-                                : "Upload Screenshot"}
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(event) => uploadIdScreenshot(event, player)}
-                                disabled={uploadingPlayerId !== null}
-                                className="hidden"
-                              />
-                            </label>
-                          )}
-                        </div>
-
-                        <div className="mt-4 flex flex-wrap items-center gap-3">
-                          {player.id_screenshot_url ? (
-                            <>
-                              <span className="rounded-full border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-bold text-green-700">✓ Screenshot uploaded</span>
-                              {player.verification_status === "approved" ? (
-                                <span className="rounded-full border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-bold text-green-700">✓ ID Approved</span>
-                              ) : player.verification_status === "rejected" ? (
-                                <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700">✕ ID Rejected</span>
-                              ) : (
-                                <span className="rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1.5 text-xs font-bold text-yellow-700">Verification Pending</span>
-                              )}
-                            </>
-                          ) : (
-                            <span className="rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1.5 text-xs font-bold text-yellow-700">Screenshot Pending</span>
-                          )}
-                        </div>
-
-                        {player.user_id !== squad.captain_id && (
-                          <p className="mt-3 text-xs text-gray-500">This player must upload their own ID screenshot from their GameArena account.</p>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </div>
               );
@@ -1141,7 +965,7 @@ export default function ManageSquadPage() {
           <section className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
             <p className="text-sm font-bold uppercase tracking-widest text-green-600">Add Player</p>
             <h2 className="mt-2 text-2xl font-black">Register a Squad Member</h2>
-            <p className="mt-2 text-sm text-gray-500">Enter the player's GameArena username. The player will then upload their own BGMI ID screenshot.</p>
+            <p className="mt-2 text-sm text-gray-500">Enter the player's GameArena username to register them to your squad.</p>
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div>
                 <label className="text-sm font-bold text-gray-700">Player Slot</label>
@@ -1182,8 +1006,8 @@ export default function ManageSquadPage() {
           <section className="mt-6 rounded-xl border border-green-200 bg-green-50 p-6">
             <div className="text-4xl">🎯</div>
             <h2 className="mt-3 text-2xl font-black">Squad Complete</h2>
-            <p className="mt-2 text-gray-600">All 4 players have been added. Each player must upload their own BGMI ID screenshot.</p>
-            <div className="mt-5 rounded-lg bg-gray-50 p-4 text-sm text-yellow-700">ID verification is pending until the organizer reviews the screenshots.</div>
+            <p className="mt-2 text-gray-600">All 4 players have been added. Your squad is ready to compete.</p>
+            <div className="mt-5 rounded-lg bg-gray-50 p-4 text-sm font-bold text-green-700">Squad roster is confirmed.</div>
           </section>
         )}
       </div>
