@@ -139,11 +139,11 @@ export default function TournamentDetailsPage() {
 
     let { data: publicTournament, error: tErr } = await supabase
       .from("tournaments")
-      .select("id, title, game, format, entry_fee, prize_pool, max_players, start_time, end_time, status, registration_status, is_private, organizer_id, scope, institution_name, is_college_only, access_code")
+      .select("id, title, game, format, entry_fee, prize_pool, max_players, start_time, end_time, status, registration_status, is_private, organizer_id, scope, is_college_only, access_code")
       .eq("id", tournamentId)
       .maybeSingle();
 
-    if (tErr && tErr.message?.includes("does not exist")) {
+    if (tErr) {
       const fallback = await supabase
         .from("tournaments")
         .select("id, title, game, format, entry_fee, prize_pool, max_players, start_time, end_time, status, registration_status, is_private, organizer_id")

@@ -371,16 +371,14 @@ export default function OrganizerPage() {
       scope: scope || null,
       access_code: accessCode.trim() || null,
       is_college_only: isCollegeOnly,
-      institution_name: organizer.institution_name || null,
     };
 
     let { error: createError } = await supabase.from("tournaments").insert(payload);
 
-    if (createError && createError.message?.includes("does not exist")) {
+    if (createError && (createError.message?.includes("schema cache") || createError.message?.includes("does not exist"))) {
       delete payload.scope;
       delete payload.access_code;
       delete payload.is_college_only;
-      delete payload.institution_name;
       const res = await supabase.from("tournaments").insert(payload);
       createError = res.error;
     }

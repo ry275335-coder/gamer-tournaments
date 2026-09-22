@@ -98,12 +98,12 @@ export default function TournamentsPage() {
     let { data: tournamentData, error: tournamentError } = await supabase
       .from("tournaments")
       .select(
-        "id, title, game, entry_fee, prize_pool, max_players, start_time, end_time, status, scope, institution_name, is_college_only"
+        "id, title, game, entry_fee, prize_pool, max_players, start_time, end_time, status, scope, is_college_only"
       )
       .eq("is_private", false)
       .order("start_time", { ascending: true });
 
-    if (tournamentError && tournamentError.message?.includes("does not exist")) {
+    if (tournamentError) {
       const fallback = await supabase
         .from("tournaments")
         .select(
