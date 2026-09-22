@@ -15,11 +15,14 @@ export default function OrganizerApplyPage() {
   const [applicationReason, setApplicationReason] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [institutionName, setInstitutionName] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [verificationPending, setVerificationPending] = useState(false);
 
   useEffect(() => {
     async function checkUser() {
@@ -32,12 +35,16 @@ export default function OrganizerApplyPage() {
 
         const { data: organizer } = await supabase
           .from("organizers")
-          .select("id")
+          .select("id, is_verified")
           .eq("user_id", user.id)
           .maybeSingle();
 
         if (organizer) {
-          router.replace("/organizer");
+          if (organizer.is_verified) {
+            router.replace("/organizer");
+          } else {
+            setVerificationPending(true);
+          }
           return;
         }
       }
@@ -64,6 +71,16 @@ export default function OrganizerApplyPage() {
       return;
     }
 
+    if (!institutionName.trim()) {
+      setError("Please enter your institution/college name.");
+      return;
+    }
+
+    if (!logoUrl.trim()) {
+      setError("Please provide a URL to your college logo.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -72,42 +89,32 @@ export default function OrganizerApplyPage() {
       } = await supabase.auth.getUser();
 
       if (currentUser) {
-        const { error: organizerError } = await supabase
-          .from("organizers")
+        // User already signed in, create verification request
+        const { error: verificationError } = await supabase
+          .from("college_verifications")
           .insert({
             user_id: currentUser.id,
-            organizer_name: organizerName,
-            organization_name: organizationName || null,
-            email: email || currentUser.email || null,
-            phone: phone || null,
-            application_reason: applicationReason || null,
-            status: "approved",
+            college_name: institutionName,
+            student_id_image_url: logoUrl,
+            status: "pending",
           });
 
-        if (organizerError) {
-          if (organizerError.code === "23505") {
-            setError("You already have an organizer account.");
-          } else {
-            setError(organizerError.message);
-          }
-
+        if (verificationError) {
+          console.error("Verification error:", verificationError);
+          setError("Unable to submit verification request. Please try again.");
           setLoading(false);
           return;
         }
 
         setSuccess(
-          "Organizer account created successfully! Redirecting to Organizer Login..."
+          "Verification request submitted! Please wait for approval from admin."
         );
-
         setLoading(false);
-
-        setTimeout(() => {
-          router.replace("/organizer/login");
-        }, 1500);
-
+        setVerificationPending(true);
         return;
       }
 
+      // No user, need to sign up first
       const { data: signUpData, error: signUpError } =
         await supabase.auth.signUp({
           email,
@@ -121,40 +128,37 @@ export default function OrganizerApplyPage() {
       }
 
       if (!signUpData.user) {
-        setError("Unable to create organizer account.");
+        setError("Unable to create account.");
         setLoading(false);
         return;
       }
 
-      const { error: organizerError } = await supabase
-        .from("organizers")
+      // Create verification request for the new user
+      const { error: verificationError } = await supabase
+        .from("college_verifications")
         .insert({
           user_id: signUpData.user.id,
-          organizer_name: organizerName,
-          organization_name: organizationName || null,
-          email,
-          phone: phone || null,
-          application_reason: applicationReason || null,
-          status: "approved",
+          college_name: institutionName,
+          student_id_image_url: logoUrl,
+          status: "pending",
         });
 
-      if (organizerError) {
-        setError(organizerError.message);
+      if (verificationError) {
+        console.error("Verification error:", verificationError);
+        // Clean up: delete the user we just created? For simplicity, we'll just show error.
+        setError("Unable to submit verification request. Please try again.");
         setLoading(false);
         return;
       }
 
-      await supabase.auth.signOut();
-
       setSuccess(
-        "Organizer account created successfully! Redirecting to Organizer Login..."
+        "Verification request submitted! Please wait for approval from admin."
       );
-
       setLoading(false);
+      setVerificationPending(true);
 
-      setTimeout(() => {
-        router.replace("/organizer/login");
-      }, 1500);
+      // Sign out the user until they are approved
+      await supabase.auth.signOut();
     } catch (err) {
       console.error(err);
       setError("Something went wrong. Please try again.");
@@ -168,6 +172,32 @@ export default function OrganizerApplyPage() {
         <div className="animate-pulse space-y-4">
           <div className="h-8 w-48 bg-gray-200 rounded"></div>
           <div className="h-4 w-32 bg-gray-100 rounded"></div>
+        </div>
+      </main>
+    );
+  }
+
+  if (verificationPending) {
+    return (
+      <main className="min-h-screen bg-white px-4 py-8 text-black">
+        <div className="mx-auto max-w-2xl">
+          <div className="mb-8 text-center">
+            <Link href="/" className="text-3xl font-black text-black no-underline">
+              Game<span className="text-green-600">Arena</span>
+            </Link>
+
+            <h1 className="mt-8 text-3xl font-bold">Application Submitted</h1>
+            <p className="mt-2 text-sm text-gray-600">
+              Your verification request has been submitted and is pending review.
+              You will be notified once approved.
+            </p>
+          </div>
+
+          <div className="mt-6 text-center">
+            <Link href="/" className="text-sm text-gray-600 hover:text-green-600 no-underline">
+              ← Back to GameArena
+            </Link>
+          </div>
         </div>
       </main>
     );
@@ -194,7 +224,13 @@ export default function OrganizerApplyPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          {success && (
+            <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+              {success}
+            >
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-700">1. Organizer Name</label>
               <input
@@ -211,10 +247,9 @@ export default function OrganizerApplyPage() {
               <label className="mb-2 block text-sm font-medium text-gray-700">2. Organization Name</label>
               <input
                 type="text"
-                required
                 value={organizationName}
                 onChange={(e) => setOrganizationName(e.target.value)}
-                placeholder="Enter organization name"
+                placeholder="Enter organization name (optional)"
                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black outline-none placeholder:text-gray-400 focus:border-green-600"
               />
             </div>
@@ -229,7 +264,9 @@ export default function OrganizerApplyPage() {
                 placeholder="organizer@example.com"
                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black outline-none placeholder:text-gray-400 focus:border-green-600"
               />
-              <p className="mt-2 text-xs text-gray-500">This email will be used for organizer login.</p>
+              <p className="mt-2 text-xs text-gray-500">
+                This email will be used for organizer login.
+              </p>
             </div>
 
             <div>
@@ -242,11 +279,40 @@ export default function OrganizerApplyPage() {
                 placeholder="Enter phone number"
                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black outline-none placeholder:text-gray-400 focus:border-green-600"
               />
-              <p className="mt-2 text-xs text-gray-500">Phone login can be added later.</p>
+              <p className="mt-2 text-xs text-gray-500">
+                Phone login can be added later.
+              </p>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">5. Reason</label>
+              <label className="mb-2 block text-sm font-medium text-gray-700">5. Institution / College Name</label>
+              <input
+                type="text"
+                required
+                value={institutionName}
+                onChange={(e) => setInstitutionName(e.target.value)}
+                placeholder="Enter your college or institution name"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black outline-none placeholder:text-gray-400 focus:border-green-600"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700">6. College Logo URL</label>
+              <input
+                type="text"
+                required
+                value={logoUrl}
+                onChange={(e) => setLogoUrl(e.target.value)}
+                placeholder="Paste a URL to your college logo image"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black outline-none placeholder:text-gray-400 focus:border-green-600"
+              />
+              <p className="mt-2 text-xs text-gray-500">
+                This logo will be displayed on your tournament pages.
+              </p>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700">7. Reason</label>
               <textarea
                 required
                 value={applicationReason}
@@ -258,7 +324,7 @@ export default function OrganizerApplyPage() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">6. Password</label>
+              <label className="mb-2 block text-sm font-medium text-gray-700">8. Password</label>
               <input
                 type="password"
                 required
@@ -268,11 +334,13 @@ export default function OrganizerApplyPage() {
                 placeholder="Create a password"
                 className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black outline-none placeholder:text-gray-400 focus:border-green-600"
               />
-              <p className="mt-2 text-xs text-gray-500">Password must be at least 6 characters.</p>
+              <p className="mt-2 text-xs text-gray-500">
+                Password must be at least 6 characters.
+              </p>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">7. Confirm Password</label>
+              <label className="mb-2 block text-sm font-medium text-gray-700">9. Confirm Password</label>
               <input
                 type="password"
                 required
@@ -284,18 +352,12 @@ export default function OrganizerApplyPage() {
               />
             </div>
 
-            {success && (
-              <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
-                {success}
-              </div>
-            )}
-
             <button
               type="submit"
               disabled={loading}
               className="w-full rounded-lg bg-green-600 py-3.5 font-bold text-white transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "Creating Organizer Account..." : "Create Organizer Account"}
+              {loading ? "Submitting Application..." : "Submit Application"}
             </button>
           </form>
 
@@ -307,8 +369,10 @@ export default function OrganizerApplyPage() {
           </div>
         </div>
 
-        <div className="mt-6 text-center">
-          <Link href="/" className="text-sm text-gray-600 hover:text-green-600 no-underline">← Back to GameArena</Link>
+        <div class="mt-6 text-center">
+          <Link href="/" className="text-sm text-gray-600 hover:text-green-600 no-underline">
+            ← Back to GameArena
+          </Link>
         </div>
       </div>
     </main>

@@ -10,6 +10,9 @@ type Organizer = {
   email: string | null;
   phone: string | null;
   status: string;
+  institution_name: string | null;
+  is_verified: boolean;
+  logo_url: string | null;
 };
 
 type Tournament = {
