@@ -247,149 +247,84 @@ const { data: tournamentData, error: tournamentError } = await supabase
   }
 
   return (
-    <main className="min-h-screen bg-[#080b12] px-6 py-8 text-white">
+    <main className="min-h-screen bg-white px-4 py-6 text-black">
       <div className="mx-auto max-w-6xl">
 
-        <header className="flex items-center justify-between border-b border-white/10 pb-6">
-          <a
-            href="/"
-            className="text-2xl font-black no-underline"
-          >
-            GAME<span className="text-green-400">ARENA</span>
+        <header className="flex items-center justify-between border-b border-gray-200 pb-4">
+          <a href="/" className="text-xl font-bold text-black no-underline">
+            GAME<span className="text-green-600">ARENA</span>
           </a>
 
           <a
             href="/dashboard"
-            className="rounded-xl border border-white/10 px-5 py-2.5 text-sm font-bold no-underline transition hover:border-green-400 hover:text-green-400"
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 no-underline transition hover:border-green-600 hover:text-green-600"
           >
             Dashboard
           </a>
         </header>
 
-        <section className="py-12">
-          <p className="text-sm font-bold uppercase tracking-widest text-green-400">
-            GameArena
-          </p>
-
-          <h1 className="mt-3 text-4xl font-black">
-            Upcoming Tournaments 🏆
-          </h1>
-
-          <p className="mt-3 text-gray-400">
-            Choose a tournament and compete for the prize pool.
-          </p>
+        <section className="py-8">
+          <h1 className="text-3xl font-bold">Tournaments</h1>
+          <p className="mt-2 text-gray-600">Join a tournament and start competing.</p>
         </section>
 
         {message && (
-          <div className="mb-6 rounded-xl border border-green-400/20 bg-green-400/10 p-4 text-center text-sm font-bold text-green-400">
+          <div className="mb-4 rounded-lg bg-green-50 border border-green-200 p-3 text-center text-sm font-medium text-green-700">
             {message}
           </div>
         )}
 
         {tournaments.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-10 text-center">
-            <p className="text-gray-400">
-              No tournaments available right now.
-            </p>
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
+            <p className="text-gray-600">No tournaments available right now.</p>
           </div>
         ) : (
-          <section className="grid gap-6 md:grid-cols-2">
-
+          <section className="grid gap-4 md:grid-cols-2">
             {tournaments.map((tournament) => (
               <div
                 key={tournament.id}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition hover:border-green-400/40"
+                className="rounded-lg border border-gray-200 bg-white p-5 transition hover:border-green-300"
               >
-
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-bold text-green-400">
-                      {tournament.game}
-                    </p>
-
-                    <h2 className="mt-2 text-2xl font-black">
-                      {tournament.title}
-                    </h2>
-                  </div>
-
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-sm text-gray-600">{tournament.game}</span>
                   <span
-                    className={`rounded-full px-3 py-1 text-xs font-bold ${
+                    className={`text-xs font-medium ${
                       tournament.status === "live"
-                        ? "bg-red-400/10 text-red-400"
+                        ? "text-red-600"
                         : tournament.status === "completed"
-                        ? "bg-gray-400/10 text-gray-400"
-                        : "bg-green-400/10 text-green-400"
+                          ? "text-gray-500"
+                          : "text-green-600"
                     }`}
                   >
                     {tournament.status.toUpperCase()}
                   </span>
                 </div>
 
-                <div className="mt-6 grid grid-cols-2 gap-4">
+                <h3 className="text-lg font-semibold">{tournament.title}</h3>
 
-                  <div className="rounded-xl bg-black/20 p-4">
-                    <p className="text-xs text-gray-500">
-                      Entry Fee
-                    </p>
-
-                    <p className="mt-1 text-lg font-black">
-                      ₹{tournament.entry_fee}
-                    </p>
+                <div className="mt-4 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Entry Fee</span>
+                    <span className="font-medium">₹{tournament.entry_fee}</span>
                   </div>
-
-                  <div className="rounded-xl bg-black/20 p-4">
-                    <p className="text-xs text-gray-500">
-                      Prize Pool
-                    </p>
-
-                    <p className="mt-1 text-lg font-black text-green-400">
-                      ₹{tournament.prize_pool}
-                    </p>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Prize Pool</span>
+                    <span className="font-medium text-green-600">₹{tournament.prize_pool}</span>
                   </div>
-
-                  <div className="rounded-xl bg-black/20 p-4">
-                    <p className="text-xs text-gray-500">
-                      Players
-                    </p>
-
-                    <p className="mt-1 text-lg font-black">
-                      {tournament.player_count} / {tournament.max_players}
-                    </p>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Players</span>
+                    <span className="font-medium">{tournament.player_count} / {tournament.max_players}</span>
                   </div>
-
-                  <div className="rounded-xl bg-black/20 p-4">
-                    <p className="text-xs text-gray-500">
-                      Starts
-                    </p>
-
-                    <p className="mt-1 text-sm font-bold">
-                      {new Date(
-                        tournament.start_time
-                      ).toLocaleString()}
-                    </p>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Starts</span>
+                    <span className="font-medium">{new Date(tournament.start_time).toLocaleDateString()}</span>
                   </div>
-
                 </div>
 
-                <div className="mt-5 rounded-xl border border-green-400/20 bg-green-400/10 p-4">
-                  <p className="text-xs font-bold uppercase tracking-wider text-green-400">
-                    {tournament.status === "upcoming"
-                      ? "Starts In"
-                      : tournament.status === "live"
-                      ? "Ends In"
-                      : "Tournament Status"}
-                  </p>
-
-                  <p className="mt-2 text-2xl font-black text-green-400">
-                    {tournament.countdown}
-                  </p>
-                </div>
-
-                <div className="mt-6 grid grid-cols-2 gap-3">
-
+                <div className="mt-4 flex gap-2">
                   <a
                     href={`/tournaments/${tournament.id}`}
-                    className="rounded-xl border border-white/10 py-3.5 text-center font-black no-underline transition hover:border-green-400 hover:text-green-400"
+                    className="flex-1 rounded-lg border border-gray-300 py-2.5 text-center font-medium text-gray-700 no-underline transition hover:border-green-600 hover:text-green-600"
                   >
                     View Details
                   </a>
@@ -401,24 +336,19 @@ const { data: tournamentData, error: tournamentError } = await supabase
                       tournament.player_count >= tournament.max_players ||
                       tournament.status !== "upcoming"
                     }
-                    className="rounded-xl bg-green-400 py-3.5 font-black text-black transition hover:bg-green-300 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex-1 rounded-lg bg-green-600 py-2.5 font-medium text-white transition hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {joiningId === tournament.id
                       ? "Joining..."
                       : tournament.player_count >= tournament.max_players
-                      ? "Tournament Full"
-                      : tournament.status === "live"
-                      ? "Tournament Live"
-                      : tournament.status === "completed"
-                      ? "Completed"
-                      : "Join Tournament"}
+                        ? "Full"
+                        : tournament.status !== "upcoming"
+                          ? "Closed"
+                          : "Join"}
                   </button>
-
                 </div>
-
               </div>
             ))}
-
           </section>
         )}
 

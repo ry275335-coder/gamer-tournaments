@@ -184,364 +184,194 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#080b12] px-6 py-8 text-white">
+    <main className="min-h-screen bg-white px-4 py-6 text-black">
       <div className="mx-auto max-w-6xl">
 
         {/* Header */}
-        <header className="flex items-center justify-between border-b border-white/10 pb-6">
-          <a
-            href="/"
-            className="text-2xl font-black no-underline"
-          >
-            GAME<span className="text-green-400">ARENA</span>
+        <header className="flex items-center justify-between border-b border-gray-200 pb-4">
+          <a href="/" className="text-xl font-bold text-black no-underline">
+            GAME<span className="text-green-600">ARENA</span>
           </a>
 
           <button
             onClick={handleLogout}
-            className="rounded-xl border border-white/10 px-5 py-2.5 text-sm font-bold transition hover:border-red-400 hover:text-red-400"
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-red-400 hover:text-red-600"
           >
             Logout
           </button>
         </header>
 
-        {/* Dashboard Welcome */}
-        <section className="py-12">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-
-            <div>
-              <p className="text-sm font-bold uppercase tracking-widest text-green-400">
-                Player Dashboard
-              </p>
-
-              <h1 className="mt-3 text-4xl font-black">
-                Welcome, {profile?.username || "Player"} 👋
-              </h1>
-
-              <p className="mt-3 text-gray-400">
-                Manage your gaming profile and tournaments.
-              </p>
-            </div>
-
-            {/* Become Organizer */}
-<button
-  onClick={handleOrganizerClick}
-  className="inline-flex w-full items-center justify-center rounded-xl bg-green-400 px-5 py-3 text-sm font-black text-black transition hover:bg-green-300 lg:w-auto"
->
-  🏆 Become an Organizer
-</button>
-
-          </div>
+        {/* Welcome */}
+        <section className="py-8">
+          <h1 className="text-2xl font-bold">Welcome, {profile?.username || "Player"}</h1>
+          <p className="mt-1 text-gray-600">Manage your gaming profile and tournaments.</p>
         </section>
 
         {/* Profile */}
         {errorMessage ? (
-          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-red-400">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-600">
             {errorMessage}
           </div>
         ) : (
-          <section className="grid gap-5 md:grid-cols-3">
+          <>
+            <section className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-lg border border-gray-200 bg-white p-4">
+                <p className="text-xs font-medium text-gray-500">Username</p>
+                <p className="mt-1 font-semibold">{profile?.username}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-white p-4">
+                <p className="text-xs font-medium text-gray-500">Game</p>
+                <p className="mt-1 font-semibold">{profile?.game}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-white p-4">
+                <p className="text-xs font-medium text-gray-500">Game ID</p>
+                <p className="mt-1 font-semibold">{profile?.game_id}</p>
+              </div>
+            </section>
 
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-              <p className="text-sm text-gray-500">
-                Username
-              </p>
-
-              <p className="mt-2 text-xl font-black">
-                {profile?.username}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-              <p className="text-sm text-gray-500">
-                Game
-              </p>
-
-              <p className="mt-2 text-xl font-black">
-                {profile?.game}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-              <p className="text-sm text-gray-500">
-                Game ID
-              </p>
-
-              <p className="mt-2 text-xl font-black">
-                {profile?.game_id}
-              </p>
-            </div>
-
-          </section>
+            {/* Stats */}
+            <section className="mt-6 grid gap-3 md:grid-cols-3">
+              <div className="rounded-lg border border-gray-200 bg-white p-4">
+                <p className="text-xs font-medium text-gray-500">Tournaments</p>
+                <p className="mt-1 text-2xl font-bold">{joinedTournaments.length}</p>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-white p-4">
+                <p className="text-xs font-medium text-gray-500">Wins</p>
+                <p className="mt-1 text-2xl font-bold text-yellow-600">
+                  {results.filter((result) => result.position === 1).length}
+                </p>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-white p-4">
+                <p className="text-xs font-medium text-gray-500">Winnings</p>
+                <p className="mt-1 text-2xl font-bold text-green-600">
+                  ₹{results.reduce((total, result) => total + Number(result.prize || 0), 0)}
+                </p>
+              </div>
+            </section>
+          </>
         )}
 
-        {/* Statistics */}
-        <section className="mt-10">
-
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-              <p className="text-sm font-bold text-gray-500">
-                Tournaments Joined
-              </p>
-
-              <p className="mt-2 text-3xl font-black text-white">
-                {joinedTournaments.length}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-              <p className="text-sm font-bold text-gray-500">
-                Wins
-              </p>
-
-              <p className="mt-2 text-3xl font-black text-yellow-400">
-                {results.filter((result) => result.position === 1).length}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-              <p className="text-sm font-bold text-gray-500">
-                Total Winnings
-              </p>
-
-              <p className="mt-2 text-3xl font-black text-green-400">
-                ₹
-                {results.reduce(
-                  (total, result) => total + Number(result.prize || 0),
-                  0
-                )}
-              </p>
-            </div>
-
-          </div>
-
+        {/* Actions */}
+        <section className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <a
+            href="/tournaments"
+            className="rounded-lg bg-green-600 px-5 py-2.5 text-center font-medium text-white no-underline transition hover:bg-green-500"
+          >
+            Browse Tournaments
+          </a>
+          <button
+            onClick={handleOrganizerClick}
+            className="rounded-lg border border-gray-300 px-5 py-2.5 text-center font-medium text-gray-700 transition hover:border-green-600 hover:text-green-600"
+          >
+            Become an Organizer
+          </button>
+          <a
+            href="/tournaments/private"
+            className="rounded-lg border border-gray-300 px-5 py-2.5 text-center font-medium text-gray-700 no-underline transition hover:border-purple-600 hover:text-purple-600"
+          >
+            Join Private Tournament
+          </a>
         </section>
 
         {/* My Tournaments */}
         <section className="mt-10">
-
-<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-
-  <h2 className="text-2xl font-black">
-    My Tournaments
-  </h2>
-
-  <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-
-    <a
-      href="/tournaments"
-      className="w-full rounded-xl bg-green-400 px-5 py-2.5 text-center text-sm font-black text-black no-underline transition hover:bg-green-300 sm:w-auto"
-    >
-      🎮 Browse Tournaments
-    </a>
-
-    <a
-      href="/tournaments/private"
-      className="w-full rounded-xl border border-purple-400/40 bg-purple-400/10 px-5 py-2.5 text-center text-sm font-black text-purple-300 no-underline transition hover:border-purple-400 hover:bg-purple-400/20 sm:w-auto"
-    >
-      🔐 Join Private Tournament
-    </a>
-
-  </div>
-
-</div>
+          <h2 className="text-xl font-bold">My Tournaments</h2>
 
           {joinedTournaments.length === 0 ? (
-            <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center">
-
-              <div className="text-4xl">
-                🏆
-              </div>
-
-              <h3 className="mt-4 text-xl font-bold">
-                No tournaments yet
-              </h3>
-
-              <p className="mt-2 text-gray-500">
-                Join a tournament and start competing!
-              </p>
-
+            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
+              <p className="text-gray-600">No tournaments joined yet.</p>
             </div>
           ) : (
-            <div className="mt-5 grid gap-5 md:grid-cols-2">
-
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
               {joinedTournaments.map((tournament) => (
                 <div
                   key={tournament.id}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition hover:border-green-400/40"
+                  className="rounded-lg border border-gray-200 bg-white p-5 transition hover:border-green-300"
                 >
-
-                  <div className="flex items-start justify-between">
-
+                  <div className="mb-3 flex items-start justify-between">
                     <div>
-                      <p className="text-sm font-bold text-green-400">
-                        {tournament.game}
-                      </p>
-
-                      <h3 className="mt-2 text-xl font-black">
-                        {tournament.title}
-                      </h3>
+                      <p className="text-sm font-medium text-green-600">{tournament.game}</p>
+                      <h3 className="mt-1 font-semibold">{tournament.title}</h3>
                     </div>
-
-                    <span className="rounded-full bg-green-400/10 px-3 py-1 text-xs font-bold text-green-400">
+                    <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-600">
                       {tournament.status}
                     </span>
-
                   </div>
 
-                  <div className="mt-5 grid grid-cols-2 gap-3">
-
-                    <div className="rounded-xl bg-black/20 p-4">
-                      <p className="text-xs text-gray-500">
-                        Entry Fee
-                      </p>
-
-                      <p className="mt-1 font-black">
-                        ₹{tournament.entry_fee}
-                      </p>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Entry Fee</span>
+                      <span className="font-medium">₹{tournament.entry_fee}</span>
                     </div>
-
-                    <div className="rounded-xl bg-black/20 p-4">
-                      <p className="text-xs text-gray-500">
-                        Prize Pool
-                      </p>
-
-                      <p className="mt-1 font-black text-green-400">
-                        ₹{tournament.prize_pool}
-                      </p>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Prize Pool</span>
+                      <span className="font-medium text-green-600">₹{tournament.prize_pool}</span>
                     </div>
-
-                    <div className="col-span-2 rounded-xl bg-black/20 p-4">
-                      <p className="text-xs text-gray-500">
-                        Tournament Starts
-                      </p>
-
-                      <p className="mt-1 text-sm font-bold">
-                        {new Date(
-                          tournament.start_time
-                        ).toLocaleString()}
-                      </p>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Starts</span>
+                      <span className="font-medium">{new Date(tournament.start_time).toLocaleDateString()}</span>
                     </div>
+                  </div>
 
-                    {/* Room Details */}
-                    {tournament.room_id && tournament.room_password && (
-                      <div className="col-span-2 rounded-xl border border-green-400/20 bg-green-400/5 p-4">
-
-                        <p className="text-xs font-bold uppercase tracking-wider text-green-400">
-                          Room Details
-                        </p>
-
-                        <div className="mt-3 grid grid-cols-2 gap-3">
-
-                          <div>
-                            <p className="text-xs text-gray-500">
-                              Room ID
-                            </p>
-
-                            <p className="mt-1 font-black">
-                              {tournament.room_id}
-                            </p>
-                          </div>
-
-                          <div>
-                            <p className="text-xs text-gray-500">
-                              Password
-                            </p>
-
-                            <p className="mt-1 font-black">
-                              {tournament.room_password}
-                            </p>
-                          </div>
-
+                  {tournament.room_id && tournament.room_password && (
+                    <div className="mt-3 rounded-lg bg-green-50 border border-green-200 p-3">
+                      <p className="text-xs font-medium text-green-600">Room Details</p>
+                      <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-gray-600">ID: </span>
+                          <span className="font-medium">{tournament.room_id}</span>
                         </div>
-
+                        <div>
+                          <span className="text-gray-600">Pass: </span>
+                          <span className="font-medium">{tournament.room_password}</span>
+                        </div>
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    <a
-                      href={`/tournaments/${tournament.id}`}
-                      className="mt-4 block w-full rounded-xl bg-green-400 py-3 text-center font-black text-black no-underline transition hover:bg-green-300"
-                    >
-                      View Tournament
-                    </a>
-
-                  </div>
-
+                  <a
+                    href={`/tournaments/${tournament.id}`}
+                    className="mt-4 block w-full rounded-lg bg-green-600 py-2.5 text-center font-medium text-white no-underline transition hover:bg-green-500"
+                  >
+                    View Tournament
+                  </a>
                 </div>
               ))}
-
             </div>
           )}
-
         </section>
 
-        {/* My Results & Winnings */}
+        {/* Results */}
         {results.length > 0 && (
           <section className="mt-10">
+            <h2 className="text-xl font-bold">My Results</h2>
 
-            <h2 className="text-2xl font-black">
-              🏆 My Results & Winnings
-            </h2>
-
-            <p className="mt-2 text-gray-400">
-              Your tournament placements and prize winnings
-            </p>
-
-            <div className="mt-6 space-y-4">
-
+            <div className="mt-4 space-y-3">
               {results.map((result) => (
                 <div
                   key={result.id}
-                  className="rounded-2xl border border-white/10 bg-white/5 p-5"
+                  className="rounded-lg border border-gray-200 bg-white p-4"
                 >
-
-                  <div className="flex items-center justify-between gap-4">
-
-                    <div className="flex items-center gap-4">
-
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-yellow-400 font-black text-black">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 font-bold text-yellow-600">
                         {result.position}
                       </div>
-
                       <div>
-
-                        <p className="font-black text-white">
-                          {result.username}
+                        <p className="font-semibold">{result.username}</p>
+                        <p className="text-sm text-gray-600">
+                          {result.position === 1 ? "1st Place" : result.position === 2 ? "2nd Place" : result.position === 3 ? "3rd Place" : `${result.position}th Place`}
                         </p>
-
-                        <p className="text-sm text-gray-400">
-                          {result.position === 1
-                            ? "1st Place"
-                            : result.position === 2
-                            ? "2nd Place"
-                            : result.position === 3
-                            ? "3rd Place"
-                            : `${result.position}th Place`}
-                        </p>
-
                       </div>
-
                     </div>
-
                     <div className="text-right">
-
-                      <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                        Prize
-                      </p>
-
-                      <p className="mt-1 text-xl font-black text-green-400">
-                        ₹{result.prize}
-                      </p>
-
+                      <p className="text-sm text-gray-600">Prize</p>
+                      <p className="font-semibold text-green-600">₹{result.prize}</p>
                     </div>
-
                   </div>
-
                 </div>
               ))}
-
             </div>
-
           </section>
         )}
 

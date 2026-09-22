@@ -136,171 +136,84 @@ if (!winnerError && winnerData) {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#080b12] text-white">
+    <main className="min-h-screen bg-white text-black">
       {/* Navbar */}
-      <header className="border-b border-white/10">
-        <div className="mx-auto max-w-7xl px-6 py-5">
+      <header className="border-b border-gray-200">
+        <div className="mx-auto max-w-7xl px-4 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-black">
-              GAME<span className="text-green-400">ARENA</span>
-            </h1>
+            <a href="/" className="text-xl font-bold no-underline">
+              GAME<span className="text-green-600">ARENA</span>
+            </a>
 
             {/* Desktop Navigation */}
-            <nav className="hidden gap-8 md:flex">
-              <a href="/" className="text-green-400">
+            <nav className="hidden gap-6 md:flex">
+              <a href="/" className="text-sm font-medium text-green-600 no-underline">
                 Home
               </a>
-
-              <a
-                href="/tournaments"
-                className="text-gray-400 hover:text-white"
-              >
+              <a href="/tournaments" className="text-sm font-medium text-gray-600 no-underline hover:text-green-600">
                 Tournaments
               </a>
-
-              <a
-                href="/tournaments"
-                className="text-gray-400 hover:text-white"
-              >
-                Leaderboard
-              </a>
-
-              <a
-                href="#how-it-works"
-                className="text-gray-400 hover:text-white"
-              >
+              <a href="#how-it-works" className="text-sm font-medium text-gray-600 no-underline hover:text-green-600">
                 How It Works
               </a>
             </nav>
 
             {/* Right Side */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {/* Mobile Menu Button */}
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="rounded-lg border border-white/10 px-3 py-2 text-xl md:hidden"
+                className="rounded-lg border border-gray-300 px-3 py-2 text-gray-600 md:hidden"
                 aria-label="Toggle menu"
               >
                 ☰
               </button>
 
-              {/* Desktop Account Buttons */}
-              <div className="hidden gap-2 lg:flex">
-                <a
-                  href="/login"
-                  className="rounded-lg border border-white/10 px-4 py-2 text-sm font-bold transition hover:border-green-400/40 hover:bg-white/5"
-                >
-                  🎮 Player Login
-                </a>
+              {/* Desktop Buttons */}
+              <a
+                href="/login"
+                className="hidden rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 no-underline transition hover:border-green-600 hover:text-green-600 md:block"
+              >
+                Login
+              </a>
 
-                <a
-                  href="/register"
-                  className="rounded-lg bg-green-400 px-4 py-2 text-sm font-bold text-black transition hover:bg-green-300"
-                >
-                  Create Player Account
-                </a>
-
-                <a
-                  href="/organizer/login"
-                  className="rounded-lg border border-yellow-400/30 px-4 py-2 text-sm font-bold text-yellow-400 transition hover:bg-yellow-400/10"
-                >
-                  🏆 Organizer Login
-                </a>
-
-                <a
-                  href="/organizer/apply"
-                  className="rounded-lg bg-yellow-400 px-4 py-2 text-sm font-bold text-black transition hover:bg-yellow-300"
-                >
-                  Create Organizer Account
-                </a>
-              </div>
-
-              {/* Smaller Desktop */}
-              <div className="hidden gap-2 md:flex lg:hidden">
-                <a
-                  href="/login"
-                  className="rounded-lg border border-white/10 px-3 py-2 text-sm font-bold"
-                >
-                  Player Login
-                </a>
-
-                <a
-                  href="/organizer/login"
-                  className="rounded-lg border border-yellow-400/30 px-3 py-2 text-sm font-bold text-yellow-400"
-                >
-                  Organizer
-                </a>
-              </div>
+              <a
+                href="/register"
+                className="hidden rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white no-underline transition hover:bg-green-500 md:block"
+              >
+                Get Started
+              </a>
             </div>
           </div>
 
           {/* Mobile Menu */}
           {mobileMenuOpen && (
-            <div className="mt-4 space-y-2 border-t border-white/10 pt-4 md:hidden">
-              <a
-                href="/"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block rounded-xl px-4 py-3 text-green-400 hover:bg-white/5"
-              >
+            <div className="mt-4 space-y-2 border-t border-gray-200 pt-4 md:hidden">
+              <a href="/" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-4 py-2.5 text-green-600 no-underline">
                 Home
               </a>
-
-              <a
-                href="/tournaments"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block rounded-xl px-4 py-3 text-gray-300 hover:bg-white/5"
-              >
+              <a href="/tournaments" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-4 py-2.5 text-gray-600 no-underline hover:bg-gray-50">
                 Tournaments
               </a>
-
-              <a
-                href="/tournaments"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block rounded-xl px-4 py-3 text-gray-300 hover:bg-white/5"
-              >
-                Leaderboard
-              </a>
-
-              <a
-                href="#how-it-works"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block rounded-xl px-4 py-3 text-gray-300 hover:bg-white/5"
-              >
+              <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-4 py-2.5 text-gray-600 no-underline hover:bg-gray-50">
                 How It Works
               </a>
 
-              <div className="mt-3 space-y-3 border-t border-white/10 pt-4">
+              <div className="mt-4 space-y-2 border-t border-gray-200 pt-4">
                 <a
                   href="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block rounded-xl border border-white/10 px-4 py-3 text-center font-bold text-white"
+                  className="block rounded-lg border border-gray-300 px-4 py-2.5 text-center font-medium text-gray-700 no-underline"
                 >
-                  🎮 Player Login
+                  Login
                 </a>
-
                 <a
                   href="/register"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block rounded-xl bg-green-400 px-4 py-3 text-center font-bold text-black"
+                  className="block rounded-lg bg-green-600 px-4 py-2.5 text-center font-medium text-white no-underline"
                 >
-                  🎮 Create Player Account
-                </a>
-
-                <a
-                  href="/organizer/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block rounded-xl border border-yellow-400/30 px-4 py-3 text-center font-bold text-yellow-400"
-                >
-                  🏆 Organizer Login
-                </a>
-
-                <a
-                  href="/organizer/apply"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block rounded-xl bg-yellow-400 px-4 py-3 text-center font-bold text-black"
-                >
-                  🏆 Create Organizer Account
+                  Get Started
                 </a>
               </div>
             </div>
@@ -309,109 +222,54 @@ if (!winnerError && winnerData) {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="mx-auto max-w-7xl px-6 py-24 md:py-32">
-          <div className="grid items-center gap-14 lg:grid-cols-2">
-            {/* Hero Content */}
+      <section className="border-b border-gray-200">
+        <div className="mx-auto max-w-7xl px-4 py-16 md:py-20">
+          <div className="grid items-center gap-10 lg:grid-cols-2">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-green-400/20 bg-green-400/10 px-4 py-2 text-sm font-bold text-green-400">
-                <span className="h-2 w-2 rounded-full bg-green-400"></span>
-                Competitive Gaming Platform
-              </div>
+              <h1 className="text-4xl font-bold leading-tight md:text-5xl">
+                Play. Compete.<br />
+                <span className="text-green-600">Win Rewards.</span>
+              </h1>
 
-              <h2 className="mt-7 text-5xl font-black leading-[0.95] tracking-tight md:text-7xl">
-                PLAY.
-                <br />
-                COMPETE.
-                <br />
-                <span className="text-green-400">CONQUER.</span>
-              </h2>
-
-              <p className="mt-7 max-w-xl text-lg leading-8 text-gray-400 md:text-xl">
-                Join gaming tournaments, compete against players, climb the
-                leaderboard and win exciting rewards.
+              <p className="mt-4 text-lg text-gray-600">
+                Join gaming tournaments, compete with other players, and win exciting prizes.
               </p>
 
-              <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:flex-wrap">
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <a
                   href="/register"
-                  className="rounded-xl bg-green-400 px-7 py-4 text-center font-black text-black transition hover:-translate-y-1 hover:bg-green-300"
+                  className="rounded-lg bg-green-600 px-6 py-3 text-center font-medium text-white no-underline transition hover:bg-green-500"
                 >
-                  🎮 Create Player Account
-                </a>
-
-                <a
-                  href="/organizer/apply"
-                  className="rounded-xl border border-yellow-400/30 px-7 py-4 text-center font-black text-yellow-400 transition hover:-translate-y-1 hover:bg-yellow-400/10"
-                >
-                  🏆 Create Organizer Account
+                  Get Started Free
                 </a>
 
                 <a
                   href="/tournaments"
-                  className="rounded-xl border border-white/10 px-7 py-4 text-center font-black text-white transition hover:-translate-y-1 hover:border-green-400/40 hover:bg-white/5"
+                  className="rounded-lg border border-gray-300 px-6 py-3 text-center font-medium text-gray-700 no-underline transition hover:border-green-600 hover:text-green-600"
                 >
                   Browse Tournaments
                 </a>
               </div>
-
-              <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-gray-500">
-                <span>✓ Free Account</span>
-                <span>✓ Multiple Games</span>
-                <span>✓ Live Tournaments</span>
-              </div>
             </div>
 
-            {/* Hero Visual */}
-            <div className="relative">
-              <div className="absolute -inset-10 animate-pulse rounded-full bg-green-400/10 blur-3xl"></div>
+            {/* Stats Card */}
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Live Stats</h3>
+                <span className="flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-600">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-600"></span>
+                  Active
+                </span>
+              </div>
 
-              <div className="relative rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-2xl transition duration-500 hover:-translate-y-2 hover:border-green-400/30">
-                <div className="rounded-2xl border border-green-400/20 bg-black/40 p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-widest text-gray-500">
-                        Live Competition
-                      </p>
-
-                      <h3 className="mt-2 text-2xl font-black">
-                        GameArena Battle
-                      </h3>
-                    </div>
-
-                    <span className="flex items-center gap-2 rounded-full bg-green-400/10 px-3 py-1 text-xs font-black text-green-400">
-                      <span className="h-2 w-2 animate-pulse rounded-full bg-green-400"></span>
-                      LIVE
-                    </span>
-                  </div>
-
-                  <div className="mt-8 grid grid-cols-2 gap-4">
-                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                      <p className="text-xs text-gray-500">Players</p>
-
-                      <p className="mt-2 text-2xl font-black">
-                        {playerCount}
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                      <p className="text-xs text-gray-500">Tournaments</p>
-
-                      <p className="mt-2 text-2xl font-black">
-                        {tournamentCount}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 rounded-xl border border-green-400/20 bg-green-400/5 p-5">
-                    <p className="text-xs font-bold uppercase tracking-widest text-green-400">
-                      Ready to compete?
-                    </p>
-
-                    <p className="mt-2 text-sm leading-6 text-gray-400">
-                      Find a tournament and prove that you're the best.
-                    </p>
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-lg bg-gray-50 p-4">
+                  <p className="text-sm text-gray-600">Players</p>
+                  <p className="mt-1 text-2xl font-bold">{playerCount}+</p>
+                </div>
+                <div className="rounded-lg bg-gray-50 p-4">
+                  <p className="text-sm text-gray-600">Tournaments</p>
+                  <p className="mt-1 text-2xl font-bold">{tournamentCount}+</p>
                 </div>
               </div>
             </div>
@@ -419,58 +277,18 @@ if (!winnerError && winnerData) {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="border-y border-white/10 bg-white/[0.02]">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 md:grid-cols-4">
-          <div className="p-8 text-center">
-            <p className="text-3xl font-black">{playerCount}+</p>
-            <p className="mt-2 text-gray-500">Players</p>
-          </div>
-
-          <div className="p-8 text-center">
-            <p className="text-3xl font-black">{tournamentCount}+</p>
-            <p className="mt-2 text-gray-500">Tournaments</p>
-          </div>
-
-          <div className="p-8 text-center">
-            <p className="text-3xl font-black">{matchCount}+</p>
-            <p className="mt-2 text-gray-500">Matches</p>
-          </div>
-
-          <div className="p-8 text-center">
-            <p className="text-3xl font-black">24/7</p>
-            <p className="mt-2 text-gray-500">Competition</p>
-          </div>
-        </div>
-      </section>
 
       {/* Tournaments */}
-      <section className="border-t border-white/10">
-        <div className="mx-auto max-w-7xl px-6 py-20">
-          <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-widest text-green-400">
-                Compete now
-              </p>
-
-              <h2 className="mt-2 text-4xl font-black md:text-5xl">
-                Featured Tournaments
-              </h2>
-
-              <p className="mt-4 max-w-2xl text-gray-400">
-                Pick your game, join a tournament and compete for the top spot.
-              </p>
-            </div>
-
-            <a
-              href="/tournaments"
-              className="w-fit rounded-xl border border-white/10 px-5 py-3 text-sm font-bold text-white no-underline transition hover:border-green-400/40 hover:bg-white/5"
-            >
-              View All Tournaments →
+      <section className="border-b border-gray-200">
+        <div className="mx-auto max-w-7xl px-4 py-12">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Featured Tournaments</h2>
+            <a href="/tournaments" className="text-sm font-medium text-green-600 no-underline hover:underline">
+              View all →
             </a>
           </div>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3">
             {tournaments.map((tournament) => {
               const now = new Date();
               const startTime = new Date(tournament.start_time);
@@ -479,125 +297,62 @@ if (!winnerError && winnerData) {
                 : null;
 
               let status = "UPCOMING";
-
               if (endTime && now >= endTime) {
                 status = "COMPLETED";
               } else if (now >= startTime) {
                 status = "LIVE";
               }
 
-              const registrationOpen =
-                tournament.registration_status !== "closed";
-
               return (
                 <div
                   key={tournament.id}
-                  className="group overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] transition duration-300 hover:-translate-y-1 hover:border-green-400/30 hover:bg-white/[0.05]"
+                  className="rounded-lg border border-gray-200 bg-white p-4 transition hover:border-green-300"
                 >
-                  {/* Card Header */}
-                  <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
-                    <span className="rounded-full bg-green-400/10 px-3 py-1 text-xs font-black text-green-400">
-                      {tournament.game}
-                    </span>
-
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-sm text-gray-600">{tournament.game}</span>
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-black ${
+                      className={`text-xs font-medium ${
                         status === "LIVE"
-                          ? "bg-red-400/10 text-red-400"
+                          ? "text-red-600"
                           : status === "COMPLETED"
-                            ? "bg-gray-400/10 text-gray-400"
-                            : "bg-blue-400/10 text-blue-400"
+                            ? "text-gray-500"
+                            : "text-green-600"
                       }`}
                     >
                       {status}
                     </span>
                   </div>
 
-                  {/* Card Body */}
-                  <div className="p-6">
-                    <h3 className="text-2xl font-black text-white">
-                      {tournament.title}
-                    </h3>
+                  <h3 className="text-lg font-semibold">{tournament.title}</h3>
 
-                    <div className="mt-6 grid grid-cols-2 gap-3">
-                      <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-                        <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                          Entry Fee
-                        </p>
-
-                        <p className="mt-2 text-xl font-black text-white">
-                          ₹{tournament.entry_fee}
-                        </p>
-                      </div>
-
-                      <div className="rounded-xl border border-green-400/10 bg-green-400/5 p-4">
-                        <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                          Prize Pool
-                        </p>
-
-                        <p className="mt-2 text-xl font-black text-green-400">
-                          ₹{tournament.prize_pool}
-                        </p>
-                      </div>
+                  <div className="mt-3 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Entry</span>
+                      <span className="font-medium">₹{tournament.entry_fee}</span>
                     </div>
-
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                          Players
-                        </p>
-
-                        <p className="mt-1 font-bold text-white">
-                          {tournamentPlayerCounts[tournament.id] || 0} /{" "}
-                          {tournament.max_players}
-                        </p>
-                      </div>
-
-                      <div className="text-right">
-                        <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                          Starts
-                        </p>
-
-                        <p className="mt-1 text-sm font-bold text-white">
-                          {startTime.toLocaleDateString("en-IN")}
-                        </p>
-                      </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Prize</span>
+                      <span className="font-medium text-green-600">₹{tournament.prize_pool}</span>
                     </div>
-
-                    <div className="mt-6">
-                      <span
-                        className={`text-xs font-bold ${
-                          registrationOpen
-                            ? "text-green-400"
-                            : "text-red-400"
-                        }`}
-                      >
-                        {registrationOpen
-                          ? "● Registration Open"
-                          : "● Registration Closed"}
-                      </span>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Players</span>
+                      <span className="font-medium">{tournamentPlayerCounts[tournament.id] || 0}/{tournament.max_players}</span>
                     </div>
-
-                    <a
-                      href={`/tournaments/${tournament.id}`}
-                      className="mt-6 block w-full rounded-xl bg-green-400 py-3 text-center font-black text-black no-underline transition group-hover:bg-green-300"
-                    >
-                      View Tournament
-                    </a>
                   </div>
+
+                  <a
+                    href={`/tournaments/${tournament.id}`}
+                    className="mt-4 block w-full rounded-lg bg-green-600 py-2.5 text-center font-medium text-white no-underline transition hover:bg-green-500"
+                  >
+                    View Details
+                  </a>
                 </div>
               );
             })}
 
             {tournaments.length === 0 && (
-              <div className="col-span-full rounded-2xl border border-white/10 bg-white/[0.03] p-10 text-center">
-                <p className="text-lg font-bold text-white">
-                  No tournaments available
-                </p>
-
-                <p className="mt-2 text-gray-500">
-                  New tournaments will appear here when they are created.
-                </p>
+              <div className="col-span-full rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
+                <p className="text-gray-600">No tournaments available right now.</p>
               </div>
             )}
           </div>
@@ -605,93 +360,31 @@ if (!winnerError && winnerData) {
       </section>
 
       {/* Recent Winners */}
-      <section className="border-t border-white/10">
-        <div className="mx-auto max-w-7xl px-6 py-20">
-          <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-widest text-green-400">
-                Top Players
-              </p>
+      <section className="border-b border-gray-200 bg-gray-50">
+        <div className="mx-auto max-w-7xl px-4 py-12">
+          <h2 className="mb-6 text-2xl font-bold">Recent Winners</h2>
 
-              <h2 className="mt-2 text-4xl font-black md:text-5xl">
-                🏆 Recent Winners
-              </h2>
-
-              <p className="mt-4 max-w-2xl text-gray-400">
-                See who is dominating the GameArena tournaments.
-              </p>
-            </div>
-
-
-          </div>
-
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3">
             {winners.map((winner, index) => (
               <div
                 key={winner.id}
-                className="group relative overflow-hidden rounded-2xl border border-yellow-400/20 bg-yellow-400/[0.04] p-6 transition duration-300 hover:-translate-y-1 hover:border-yellow-400/40 hover:bg-yellow-400/[0.07]"
+                className="rounded-lg border border-gray-200 bg-white p-4 transition hover:border-yellow-300"
               >
-                <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-yellow-400/10 blur-3xl transition group-hover:bg-yellow-400/20"></div>
-
-                <div className="relative">
-                  <div className="flex items-center justify-between">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full border border-yellow-400/20 bg-yellow-400/10 text-3xl">
-                      {index === 0
-                        ? "🥇"
-                        : index === 1
-                          ? "🥈"
-                          : "🥉"}
-                    </div>
-
-                    <span className="rounded-full border border-yellow-400/20 bg-yellow-400/10 px-3 py-1 text-xs font-black uppercase tracking-wider text-yellow-400">
-                      Winner
-                    </span>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 text-xl">
+                    {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
                   </div>
-
-                  <p className="mt-7 text-xs font-bold uppercase tracking-widest text-gray-500">
-                    Champion
-                  </p>
-
-                  <h3 className="mt-2 truncate text-2xl font-black text-white">
-                    {winner.username}
-                  </h3>
-
-                  <div className="mt-6 flex items-end justify-between border-t border-white/10 pt-5">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                        Prize Won
-                      </p>
-
-                      <p className="mt-1 text-2xl font-black text-green-400">
-                        ₹{winner.prize}
-                      </p>
-                    </div>
-
-                    <div className="text-right">
-                      <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                        Rank
-                      </p>
-
-                      <p className="mt-1 font-black text-yellow-400">
-                        #{winner.position}
-                      </p>
-                    </div>
+                  <div>
+                    <p className="font-semibold">{winner.username}</p>
+                    <p className="text-sm text-gray-600">Won ₹{winner.prize}</p>
                   </div>
                 </div>
               </div>
             ))}
 
             {winners.length === 0 && (
-              <div className="col-span-full rounded-2xl border border-white/10 bg-white/[0.03] p-10 text-center">
-                <div className="text-4xl">🏆</div>
-
-                <p className="mt-4 text-lg font-bold text-white">
-                  No winners yet
-                </p>
-
-                <p className="mt-2 text-gray-500">
-                  Winners will appear here after tournaments are completed.
-                </p>
+              <div className="col-span-full rounded-lg border border-gray-200 bg-white p-8 text-center">
+                <p className="text-gray-600">No winners yet. Be the first one!</p>
               </div>
             )}
           </div>
@@ -699,71 +392,21 @@ if (!winnerError && winnerData) {
       </section>
 
       {/* How It Works */}
-      <section
-        id="how-it-works"
-        className="border-t border-white/10 bg-white/[0.02]"
-      >
-        <div className="mx-auto max-w-7xl px-6 py-20">
-          <div className="max-w-2xl">
-            <p className="text-sm font-bold uppercase tracking-widest text-green-400">
-              Simple & easy
-            </p>
+      <section id="how-it-works" className="border-b border-gray-200">
+        <div className="mx-auto max-w-7xl px-4 py-12">
+          <h2 className="mb-6 text-2xl font-bold">How It Works</h2>
 
-            <h2 className="mt-2 text-4xl font-black">How It Works</h2>
-
-            <p className="mt-4 text-gray-400">
-              Join GameArena and start competing in just a few simple steps.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-6 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-4">
             {[
-              {
-                number: "01",
-                icon: "👤",
-                title: "Choose Your Role",
-                description:
-                  "Join GameArena as a player or create an organizer account to host tournaments.",
-              },
-              {
-                number: "02",
-                icon: "🎮",
-                title: "Join Tournament",
-                description:
-                  "Browse available tournaments and join the competition you want.",
-              },
-              {
-                number: "03",
-                icon: "⚔️",
-                title: "Play & Compete",
-                description:
-                  "Enter the match, compete against other players and give your best.",
-              },
-              {
-                number: "04",
-                icon: "🏆",
-                title: "Win Rewards",
-                description:
-                  "Check the leaderboard, results and your tournament winnings.",
-              },
-            ].map((step) => (
-              <div
-                key={step.number}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition hover:border-green-400/30 hover:bg-white/[0.05]"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-3xl">{step.icon}</span>
-
-                  <span className="text-sm font-black text-green-400">
-                    {step.number}
-                  </span>
-                </div>
-
-                <h3 className="mt-6 text-xl font-black">{step.title}</h3>
-
-                <p className="mt-3 text-sm leading-6 text-gray-400">
-                  {step.description}
-                </p>
+              { icon: "👤", title: "Create Account", description: "Sign up as a player or organizer" },
+              { icon: "🎮", title: "Join Tournament", description: "Browse and join competitions" },
+              { icon: "⚔️", title: "Play & Compete", description: "Enter matches and compete" },
+              { icon: "🏆", title: "Win Rewards", description: "Check results and prizes" },
+            ].map((step, index) => (
+              <div key={index} className="rounded-lg border border-gray-200 bg-white p-4">
+                <span className="text-2xl">{step.icon}</span>
+                <h3 className="mt-3 font-semibold">{step.title}</h3>
+                <p className="mt-1 text-sm text-gray-600">{step.description}</p>
               </div>
             ))}
           </div>
@@ -771,137 +414,39 @@ if (!winnerError && winnerData) {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 bg-black">
-        <div className="mx-auto max-w-7xl px-6 py-14">
-          <div className="grid gap-10 md:grid-cols-4">
-            {/* Brand */}
-            <div className="md:col-span-2">
-              <h2 className="text-2xl font-black">
-                GAME<span className="text-green-400">ARENA</span>
-              </h2>
-
-              <p className="mt-4 max-w-md leading-7 text-gray-500">
-                A competitive gaming platform where players can join
-                tournaments, compete with others and win exciting rewards.
+      <footer className="border-t border-gray-200 bg-gray-50">
+        <div className="mx-auto max-w-7xl px-4 py-8">
+          <div className="grid gap-8 md:grid-cols-3">
+            <div>
+              <h3 className="text-lg font-bold">
+                GAME<span className="text-green-600">ARENA</span>
+              </h3>
+              <p className="mt-2 text-sm text-gray-600">
+                Join tournaments, compete with players, and win rewards.
               </p>
+            </div>
 
-              <div className="mt-6 flex flex-wrap gap-3">
-                <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-bold text-gray-400">
-                  🎮 Gaming
-                </span>
-
-                <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-bold text-gray-400">
-                  🏆 Tournaments
-                </span>
-
-                <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-bold text-gray-400">
-                  ⚡ Competition
-                </span>
+            <div>
+              <h4 className="font-semibold">Quick Links</h4>
+              <div className="mt-3 space-y-2">
+                <a href="/" className="block text-sm text-gray-600 no-underline hover:text-green-600">Home</a>
+                <a href="/tournaments" className="block text-sm text-gray-600 no-underline hover:text-green-600">Tournaments</a>
+                <a href="#how-it-works" className="block text-sm text-gray-600 no-underline hover:text-green-600">How It Works</a>
               </div>
             </div>
 
-            {/* Quick Links */}
             <div>
-              <h3 className="font-black text-white">Quick Links</h3>
-
-              <div className="mt-5 space-y-3">
-                <a
-                  href="/"
-                  className="block text-sm text-gray-500 transition hover:text-green-400"
-                >
-                  Home
-                </a>
-
-                <a
-                  href="/tournaments"
-                  className="block text-sm text-gray-500 transition hover:text-green-400"
-                >
-                  Tournaments
-                </a>
-
-                <a
-                  href="/tournaments"
-                  className="block text-sm text-gray-500 transition hover:text-green-400"
-                >
-                  Leaderboard
-                </a>
-
-                <a
-                  href="#how-it-works"
-                  className="block text-sm text-gray-500 transition hover:text-green-400"
-                >
-                  How It Works
-                </a>
-              </div>
-            </div>
-
-            {/* Account */}
-            <div>
-              <h3 className="font-black text-white">Account</h3>
-
-              <div className="mt-5 space-y-3">
-                <a
-                  href="/login"
-                  className="block text-sm text-gray-500 transition hover:text-green-400"
-                >
-                  🎮 Player Login
-                </a>
-
-                <a
-                  href="/register"
-                  className="block text-sm text-gray-500 transition hover:text-green-400"
-                >
-                  🎮 Create Player Account
-                </a>
-
-                <a
-                  href="/organizer/login"
-                  className="block text-sm text-gray-500 transition hover:text-yellow-400"
-                >
-                  🏆 Organizer Login
-                </a>
-
-                <a
-                  href="/organizer/apply"
-                  className="block text-sm text-gray-500 transition hover:text-yellow-400"
-                >
-                  🏆 Create Organizer Account
-                </a>
-
-                <a
-                  href="/dashboard"
-                  className="block text-sm text-gray-500 transition hover:text-green-400"
-                >
-                  Player Dashboard
-                </a>
-                <a
-  href="/admin"
-  className="block text-sm text-gray-500 transition hover:text-green-400"
->
-  Admin Login
-</a>
-
-                <a
-                  href="/organizer"
-                  className="block text-sm text-gray-500 transition hover:text-yellow-400"
-                >
-                  Organizer Dashboard
-                </a>
+              <h4 className="font-semibold">Account</h4>
+              <div className="mt-3 space-y-2">
+                <a href="/login" className="block text-sm text-gray-600 no-underline hover:text-green-600">Player Login</a>
+                <a href="/register" className="block text-sm text-gray-600 no-underline hover:text-green-600">Create Account</a>
+                <a href="/organizer/login" className="block text-sm text-gray-600 no-underline hover:text-yellow-600">Organizer Login</a>
               </div>
             </div>
           </div>
 
-          {/* Bottom */}
-          <div className="mt-12 flex flex-col gap-4 border-t border-white/10 pt-6 text-sm text-gray-600 md:flex-row md:items-center md:justify-between">
-            <p>
-              © 2026 GameArena. All rights reserved. Created by{" "}
-              <span className="font-bold text-green-400">Ritesh❤️</span>.
-            </p>
-
-            <p>
-              Built for gamers.{" "}
-              <span className="text-green-400">●</span> Made to compete.
-            </p>
+          <div className="mt-8 border-t border-gray-200 pt-6 text-center text-sm text-gray-600">
+            © 2026 GameArena. Created by <span className="font-medium text-green-600">Ritesh</span>
           </div>
         </div>
       </footer>

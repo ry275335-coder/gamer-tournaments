@@ -62,9 +62,7 @@ export default function RegisterPage() {
       }
     }
 
-    setMessage(
-      "Account created successfully! Redirecting to login..."
-    );
+    setMessage("Account created successfully! Redirecting to login...");
 
     setUsername("");
     setEmail("");
@@ -81,32 +79,24 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#080b12] px-6 py-12 text-white">
+    <main className="min-h-screen bg-white px-4 py-8 text-black">
       <div className="mx-auto max-w-md">
 
-        {/* Logo */}
-        <div className="mb-10 text-center">
-          <a href="/" className="text-3xl font-black">
-            GAME<span className="text-green-400">ARENA</span>
+        <div className="mb-8 text-center">
+          <a href="/" className="text-2xl font-bold text-black no-underline">
+            GAME<span className="text-green-600">ARENA</span>
           </a>
 
-          <h1 className="mt-8 text-3xl font-black">
-            Create Your Profile
-          </h1>
-
-          <p className="mt-3 text-gray-400">
-            Join the competition and start your gaming journey.
-          </p>
+          <h1 className="mt-6 text-2xl font-bold">Create Your Profile</h1>
+          <p className="mt-2 text-sm text-gray-600">Join the competition and start gaming.</p>
         </div>
 
-        {/* Register Card */}
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-7">
+        <div className="rounded-lg border border-gray-200 bg-white p-6">
 
-          <form onSubmit={handleRegister} className="space-y-5">
+          <form onSubmit={handleRegister} className="space-y-4">
 
-            {/* Username */}
             <div>
-              <label className="mb-2 block text-sm font-bold">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
                 Username
               </label>
 
@@ -115,13 +105,12 @@ export default function RegisterPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your username"
-                className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none placeholder:text-gray-600 focus:border-green-400"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none placeholder:text-gray-400 focus:border-green-600"
               />
             </div>
 
-            {/* Email */}
             <div>
-              <label className="mb-2 block text-sm font-bold">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
                 Email Address
               </label>
 
@@ -130,34 +119,30 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none placeholder:text-gray-600 focus:border-green-400"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none placeholder:text-gray-400 focus:border-green-600"
               />
             </div>
 
-            {/* Game */}
             <div>
-              <label className="mb-2 block text-sm font-bold">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
                 Select Game
               </label>
 
               <select
                 value={game}
                 onChange={(e) => setGame(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-[#11151f] px-4 py-3 outline-none focus:border-green-400"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none focus:border-green-600"
               >
                 <option value="">Choose your game</option>
                 <option value="bgmi">BGMI</option>
                 <option value="free-fire">Free Fire</option>
-                <option value="cod-mobile">
-                  Call of Duty Mobile
-                </option>
+                <option value="cod-mobile">Call of Duty Mobile</option>
                 <option value="valorant">Valorant</option>
               </select>
             </div>
 
-            {/* Game ID */}
             <div>
-              <label className="mb-2 block text-sm font-bold">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
                 Game ID
               </label>
 
@@ -166,13 +151,12 @@ export default function RegisterPage() {
                 value={gameId}
                 onChange={(e) => setGameId(e.target.value)}
                 placeholder="Enter your in-game ID"
-                className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none placeholder:text-gray-600 focus:border-green-400"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none placeholder:text-gray-400 focus:border-green-600"
               />
             </div>
 
-            {/* Password */}
             <div>
-              <label className="mb-2 block text-sm font-bold">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
                 Password
               </label>
 
@@ -181,60 +165,49 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Create a password"
-                className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none placeholder:text-gray-600 focus:border-green-400"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none placeholder:text-gray-400 focus:border-green-600"
               />
             </div>
 
-            {/* Confirm Password */}
             <div>
-              <label className="mb-2 block text-sm font-bold">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
                 Confirm Password
               </label>
 
               <input
                 type="password"
                 value={confirmPassword}
-                onChange={(e) =>
-                  setConfirmPassword(e.target.value)
-                }
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm your password"
-                className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none placeholder:text-gray-600 focus:border-green-400"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none placeholder:text-gray-400 focus:border-green-600"
               />
             </div>
 
-            {/* Message */}
             {message && (
-              <div className="rounded-xl border border-white/10 bg-black/20 p-4 text-sm text-green-400">
+              <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
                 {message}
               </div>
             )}
 
-            {/* Register */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-green-400 py-3.5 font-black text-black transition hover:bg-green-300 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-lg bg-green-600 py-3 font-medium text-white transition hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? "Creating Account..." : "Create Profile"}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-400">
+          <p className="mt-5 text-center text-sm text-gray-600">
             Already have an account?{" "}
-            <a
-              href="/login"
-              className="font-bold text-green-400 hover:text-green-300"
-            >
+            <a href="/login" className="font-medium text-green-600 hover:text-green-500 no-underline">
               Login
             </a>
           </p>
         </div>
 
-        <div className="mt-6 text-center">
-          <a
-            href="/"
-            className="text-sm text-gray-500 hover:text-white"
-          >
+        <div className="mt-5 text-center">
+          <a href="/" className="text-sm text-gray-600 hover:text-green-600 no-underline">
             ← Back to Home
           </a>
         </div>

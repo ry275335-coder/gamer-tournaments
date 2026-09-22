@@ -43,31 +43,16 @@ export default function LoginPage() {
 
     const user = data.user;
 
-    const ADMIN_USER_ID =
-      "6431960a-b0c6-4e2a-8b1a-d5017ceae103";
-
-    // ==========================================
-    // ADMIN CHECK
-    // ==========================================
+    const ADMIN_USER_ID = "6431960a-b0c6-4e2a-8b1a-d5017ceae103";
 
     if (user.id === ADMIN_USER_ID) {
       await supabase.auth.signOut();
 
-      setMessage(
-        "This is an admin account. Please use Admin Login."
-      );
+      setMessage("This is an admin account. Please use Admin Login.");
 
       setLoading(false);
       return;
     }
-
-    // ==========================================
-    // ORGANIZER CHECK
-    // ==========================================
-    // This check MUST happen before the player
-    // profile check because an organizer may also
-    // have an old player profile.
-    // ==========================================
 
     const {
       data: organizer,
@@ -79,37 +64,24 @@ export default function LoginPage() {
       .maybeSingle();
 
     if (organizerError) {
-      console.error(
-        "Organizer check error:",
-        organizerError
-      );
+      console.error("Organizer check error:", organizerError);
 
       await supabase.auth.signOut();
 
-      setMessage(
-        "Unable to verify your account. Please try again."
-      );
+      setMessage("Unable to verify your account. Please try again.");
 
       setLoading(false);
       return;
     }
 
-    // Organizer accounts are NOT allowed
-    // to use Player Login.
     if (organizer) {
       await supabase.auth.signOut();
 
-      setMessage(
-        "This is an organizer account. Please use Organizer Login."
-      );
+      setMessage("This is an organizer account. Please use Organizer Login.");
 
       setLoading(false);
       return;
     }
-
-    // ==========================================
-    // PLAYER PROFILE CHECK
-    // ==========================================
 
     const {
       data: profile,
@@ -121,37 +93,24 @@ export default function LoginPage() {
       .maybeSingle();
 
     if (profileError) {
-      console.error(
-        "Player profile check error:",
-        profileError
-      );
+      console.error("Player profile check error:", profileError);
 
       await supabase.auth.signOut();
 
-      setMessage(
-        "Unable to verify your player profile. Please try again."
-      );
+      setMessage("Unable to verify your player profile. Please try again.");
 
       setLoading(false);
       return;
     }
 
-    // No player profile means this is not
-    // a valid player account.
     if (!profile) {
       await supabase.auth.signOut();
 
-      setMessage(
-        "No player profile found. Please use the correct login."
-      );
+      setMessage("No player profile found. Please use the correct login.");
 
       setLoading(false);
       return;
     }
-
-    // ==========================================
-    // VALID PLAYER ACCOUNT
-    // ==========================================
 
     setMessage("Login successful! Redirecting...");
 
@@ -161,30 +120,25 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#080b12] px-6 py-12 text-white">
+    <main className="min-h-screen bg-white px-4 py-8 text-black">
       <div className="mx-auto max-w-md">
 
-        <div className="mb-10 text-center">
-          <a href="/" className="text-3xl font-black">
-            GAME<span className="text-green-400">ARENA</span>
+        <div className="mb-8 text-center">
+          <a href="/" className="text-2xl font-bold text-black no-underline">
+            GAME<span className="text-green-600">ARENA</span>
           </a>
 
-          <h1 className="mt-8 text-3xl font-black">
-            Welcome Back
-          </h1>
-
-          <p className="mt-3 text-gray-400">
-            Login to continue your gaming journey.
-          </p>
+          <h1 className="mt-6 text-2xl font-bold">Welcome Back</h1>
+          <p className="mt-2 text-sm text-gray-600">Login to continue.</p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-7">
+        <div className="rounded-lg border border-gray-200 bg-white p-6">
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-4">
 
             <div>
-              <label className="mb-2 block text-sm font-bold">
-                Email Address
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Email
               </label>
 
               <input
@@ -193,12 +147,12 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 disabled={loading}
-                className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none placeholder:text-gray-600 focus:border-green-400 disabled:opacity-50"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none placeholder:text-gray-400 focus:border-green-600 disabled:opacity-50"
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
                 Password
               </label>
 
@@ -206,14 +160,14 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                placeholder="Enter password"
                 disabled={loading}
-                className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 outline-none placeholder:text-gray-600 focus:border-green-400 disabled:opacity-50"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none placeholder:text-gray-400 focus:border-green-600 disabled:opacity-50"
               />
             </div>
 
             {message && (
-              <div className="rounded-xl border border-white/10 bg-black/20 p-4 text-sm text-green-400">
+              <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
                 {message}
               </div>
             )}
@@ -221,32 +175,35 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-green-400 py-3.5 font-black text-black transition hover:bg-green-300 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-lg bg-green-600 py-3 font-medium text-white transition hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? "Logging In..." : "Login"}
+              {loading ? "Logging in..." : "Login"}
             </button>
 
           </form>
 
-          <p className="mt-6 text-center text-sm text-gray-400">
+          <p className="mt-5 text-center text-sm text-gray-600">
             Don't have an account?{" "}
-            <a
-              href="/register"
-              className="font-bold text-green-400 hover:text-green-300"
-            >
-              Create Profile
+            <a href="/register" className="font-medium text-green-600 hover:text-green-500 no-underline">
+              Create one
             </a>
           </p>
 
         </div>
 
-        <div className="mt-6 text-center">
-          <a
-            href="/"
-            className="text-sm text-gray-500 hover:text-white"
-          >
+        <div className="mt-5 text-center">
+          <a href="/" className="text-sm text-gray-600 hover:text-green-600 no-underline">
             ← Back to Home
           </a>
+        </div>
+
+        <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <p className="text-center text-sm text-gray-700">
+            Admin user?{" "}
+            <a href="/admin/login" className="font-medium text-blue-600 hover:text-blue-500 no-underline">
+              Login as Admin
+            </a>
+          </p>
         </div>
 
       </div>
