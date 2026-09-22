@@ -128,7 +128,7 @@ export default function OrganizerPage() {
 
       const { data: organizerData, error: organizerError } = await supabase
         .from("organizers")
-        .select("id, organizer_name, organization_name, email, phone, status")
+        .select("id, organizer_name, organization_name, email, phone, status, institution_name, is_verified, logo_url")
         .eq("user_id", user.id)
         .maybeSingle();
 

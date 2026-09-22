@@ -440,7 +440,7 @@ export default function TournamentDetailsPage() {
               <button
                 onClick={async () => {
                   if (!tournament) return;
-                  const reason = window.alert ? prompt('Please provide a reason for reporting this tournament:') : '';
+                  const reason = typeof window !== 'undefined' ? window.prompt('Please provide a reason for reporting this tournament:') : '';
                   if (reason && reason.trim()) {
                     try {
                       await createTournamentReport({

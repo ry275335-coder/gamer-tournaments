@@ -15,9 +15,9 @@ type Tournament = {
   status: string;
   player_count: number;
   countdown: string;
-  scope: 'intra' | 'inter' | null;
-  institution_name: string | null;
-  is_college_only: boolean;
+  scope?: 'intra' | 'inter' | null;
+  institution_name?: string | null;
+  is_college_only?: boolean;
 };
 type TournamentResult = {
   id: string;

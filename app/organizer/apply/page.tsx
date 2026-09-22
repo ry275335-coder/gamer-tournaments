@@ -227,7 +227,7 @@ export default function OrganizerApplyPage() {
           {success && (
             <div className="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
               {success}
-            >
+            </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -369,7 +369,7 @@ export default function OrganizerApplyPage() {
           </div>
         </div>
 
-        <div class="mt-6 text-center">
+        <div className="mt-6 text-center">
           <Link href="/" className="text-sm text-gray-600 hover:text-green-600 no-underline">
             ← Back to GameArena
           </Link>

@@ -124,7 +124,7 @@ export default function DashboardPage() {
           .eq('college_id', user.id)
           .order('start_time', { ascending: true });
 
-        if (!error && tournamentData) {
+        if (!tournamentError && tournamentData) {
           // Get player counts for each tournament
           const tournamentsWithCount = await Promise.all(
             tournamentData.map(async (tournament) => {

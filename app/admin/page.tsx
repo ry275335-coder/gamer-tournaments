@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { updateCollegeVerificationStatus } from "@/lib/supabase";
 
 type Tournament = {
   registration_status?: string;
@@ -371,6 +372,13 @@ export default function AdminPage() {
     setCreating(true);
     setMessage("");
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setMessage("User not logged in");
+      setCreating(false);
+      return;
+    }
+
     const finalAccessNumber = isPrivate
       ? accessNumber || generateAccessNumber()
       : null;
@@ -397,7 +405,7 @@ export default function AdminPage() {
         is_private: isPrivate,
         access_number: finalAccessNumber,
         access_password: finalAccessPassword,
-        college_id: data.user.id, // Set the organizer's user ID as college_id
+        college_id: user.id,
       })
       .select()
       .single();
