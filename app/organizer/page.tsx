@@ -126,11 +126,26 @@ export default function OrganizerPage() {
 
       const user = authData.user;
 
-      const { data: organizerData, error: organizerError } = await supabase
+      let { data: organizerData, error: organizerError } = await supabase
         .from("organizers")
         .select("id, organizer_name, organization_name, email, phone, status, institution_name, is_verified, logo_url")
         .eq("user_id", user.id)
         .maybeSingle();
+
+      if (organizerError && organizerError.message?.includes("does not exist")) {
+        const fallback = await supabase
+          .from("organizers")
+          .select("id, organizer_name, organization_name, email, phone, status")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        organizerData = fallback.data ? {
+          ...fallback.data,
+          institution_name: null,
+          is_verified: false,
+          logo_url: null,
+        } : null;
+        organizerError = fallback.error;
+      }
 
       if (organizerError) {
         console.error(organizerError);

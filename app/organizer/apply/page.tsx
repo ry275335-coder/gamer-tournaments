@@ -33,11 +33,20 @@ export default function OrganizerApplyPage() {
       if (user) {
         setEmail(user.email ?? "");
 
-        const { data: organizer } = await supabase
+        let { data: organizer, error: orgErr } = await supabase
           .from("organizers")
           .select("id, is_verified")
           .eq("user_id", user.id)
           .maybeSingle();
+
+        if (orgErr && orgErr.message?.includes("does not exist")) {
+          const fallback = await supabase
+            .from("organizers")
+            .select("id")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          organizer = fallback.data ? { ...fallback.data, is_verified: true } : null;
+        }
 
         if (organizer) {
           if (organizer.is_verified) {
