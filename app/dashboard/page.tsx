@@ -105,86 +105,94 @@ export default function DashboardPage() {
         .eq('user_id', user.id)
         .single();
 
-      // Load college tournaments if user is verified organizer
-      let collegeTournaments: CollegeTournament[] = [];
-      if (verificationData && verificationData.status === 'approved') {
-        const { data: tournamentData, error: tournamentError } = await supabase
+      // Load college tournaments
+      let loadedCollegeTournaments: CollegeTournament[] = [];
+      let { data: tournamentData, error: tournamentError } = await supabase
+        .from('tournaments')
+        .select(`
+          id,
+          title,
+          game,
+          entry_fee,
+          prize_pool,
+          start_time,
+          end_time,
+          status,
+          max_players,
+          scope,
+          is_college_only
+        `)
+        .or('is_college_only.eq.true,scope.not.is.null')
+        .order('start_time', { ascending: true });
+
+      if (tournamentError && tournamentError.message?.includes('does not exist')) {
+        const fallback = await supabase
           .from('tournaments')
-          .select(`
-            id,
-            title,
-            game,
-            entry_fee,
-            prize_pool,
-            start_time,
-            end_time,
-            status,
-            max_players
-          `)
+          .select('id, title, game, entry_fee, prize_pool, start_time, end_time, status, max_players')
           .eq('college_id', user.id)
           .order('start_time', { ascending: true });
+        tournamentData = fallback.data as any;
+      }
 
-        if (!tournamentError && tournamentData) {
-          // Get player counts for each tournament
-          const tournamentsWithCount = await Promise.all(
-            tournamentData.map(async (tournament) => {
-              const { count } = await supabase
-                .from('tournament_players')
-                .select('*', { count: 'exact', head: true })
-                .eq('tournament_id', tournament.id);
+      if (tournamentData && tournamentData.length > 0) {
+        const tournamentsWithCount = await Promise.all(
+          tournamentData.map(async (tournament) => {
+            const { count } = await supabase
+              .from('tournament_players')
+              .select('*', { count: 'exact', head: true })
+              .eq('tournament_id', tournament.id);
 
-              const now = new Date();
-              const startTime = new Date(tournament.start_time);
-              const endTime = new Date(tournament.end_time);
+            const now = new Date();
+            const startTime = new Date(tournament.start_time);
+            const endTime = new Date(tournament.end_time);
 
-              let currentStatus = 'upcoming';
-              let difference = 0;
+            let currentStatus = 'upcoming';
+            let difference = 0;
 
-              if (now >= endTime) {
-                currentStatus = 'completed';
-              } else if (now >= startTime) {
-                currentStatus = 'live';
-              }
+            if (now >= endTime) {
+              currentStatus = 'completed';
+            } else if (now >= startTime) {
+              currentStatus = 'live';
+            }
 
-              if (now < startTime) {
-                difference = startTime.getTime() - now.getTime();
-              } else if (now < endTime) {
-                difference = endTime.getTime() - now.getTime();
-              }
+            if (now < startTime) {
+              difference = startTime.getTime() - now.getTime();
+            } else if (now < endTime) {
+              difference = endTime.getTime() - now.getTime();
+            }
 
-              let countdown = 'Tournament ended';
+            let countdown = 'Tournament ended';
 
-              if (difference > 0) {
-                const days = Math.floor(
-                  difference / (1000 * 60 * 60 * 24)
-                );
+            if (difference > 0) {
+              const days = Math.floor(
+                difference / (1000 * 60 * 60 * 24)
+              );
 
-                const hours = Math.floor(
-                  (difference / (1000 * 60 * 60)) % 24
-                );
+              const hours = Math.floor(
+                (difference / (1000 * 60 * 60)) % 24
+              );
 
-                const minutes = Math.floor(
-                  (difference / (1000 * 60)) % 60
-                );
+              const minutes = Math.floor(
+                (difference / (1000 * 60)) % 60
+              );
 
-                const seconds = Math.floor(
-                  (difference / 1000) % 60
-                );
+              const seconds = Math.floor(
+                (difference / 1000) % 60
+              );
 
-                countdown = `${days > 0 ? `${days}d ` : ''}${hours}h ${minutes}m ${seconds}s`;
-              }
+              countdown = `${days > 0 ? `${days}d ` : ''}${hours}h ${minutes}m ${seconds}s`;
+            }
 
-              return {
-                ...tournament,
-                status: currentStatus,
-                player_count: count || 0,
-                countdown,
-              };
-            })
-          );
+            return {
+              ...tournament,
+              status: currentStatus,
+              player_count: count || 0,
+              countdown,
+            };
+          })
+        );
 
-          collegeTournaments = tournamentsWithCount;
-        }
+        setCollegeTournaments(tournamentsWithCount);
       }
 
       const { data: joinedData, error: joinedError } = await supabase

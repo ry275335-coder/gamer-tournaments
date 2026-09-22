@@ -31,6 +31,7 @@ export default function TournamentsPage() {
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [filter, setFilter] = useState<"all" | "college" | "open">("all");
 
   useEffect(() => {
     loadTournaments();
@@ -94,13 +95,25 @@ export default function TournamentsPage() {
   }, []);
 
   async function loadTournaments() {
-const { data: tournamentData, error: tournamentError } = await supabase
-  .from("tournaments")
-  .select(
-    "id, title, game, entry_fee, prize_pool, max_players, start_time, end_time, status"
-  )
-  .eq("is_private", false)
-  .order("start_time", { ascending: true });
+    let { data: tournamentData, error: tournamentError } = await supabase
+      .from("tournaments")
+      .select(
+        "id, title, game, entry_fee, prize_pool, max_players, start_time, end_time, status, scope, institution_name, is_college_only"
+      )
+      .eq("is_private", false)
+      .order("start_time", { ascending: true });
+
+    if (tournamentError && tournamentError.message?.includes("does not exist")) {
+      const fallback = await supabase
+        .from("tournaments")
+        .select(
+          "id, title, game, entry_fee, prize_pool, max_players, start_time, end_time, status"
+        )
+        .eq("is_private", false)
+        .order("start_time", { ascending: true });
+      tournamentData = fallback.data as any;
+      tournamentError = fallback.error;
+    }
 
     if (tournamentError) {
       console.error("Tournament loading error:", tournamentError);
@@ -274,25 +287,83 @@ const { data: tournamentData, error: tournamentError } = await supabase
           <p className="mt-2 text-gray-600">Join a tournament and start competing.</p>
         </section>
 
+        {/* Filters */}
+        <div className="mb-6 flex flex-wrap gap-2">
+          <button
+            onClick={() => setFilter("all")}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+              filter === "all"
+                ? "bg-green-600 text-white"
+                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            All Tournaments ({tournaments.length})
+          </button>
+          <button
+            onClick={() => setFilter("college")}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+              filter === "college"
+                ? "bg-green-600 text-white"
+                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            🎓 College Tournaments ({tournaments.filter((t) => t.is_college_only || !!t.scope || !!t.institution_name).length})
+          </button>
+          <button
+            onClick={() => setFilter("open")}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+              filter === "open"
+                ? "bg-green-600 text-white"
+                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            ⚡ Open Registration ({tournaments.filter((t) => t.status === "upcoming" && t.player_count < t.max_players).length})
+          </button>
+        </div>
+
         {message && (
           <div className="mb-4 rounded-lg bg-green-50 border border-green-200 p-3 text-center text-sm font-medium text-green-700">
             {message}
           </div>
         )}
 
-        {tournaments.length === 0 ? (
+        {tournaments.filter((t) => {
+          if (filter === "college") return t.is_college_only || !!t.scope || !!t.institution_name;
+          if (filter === "open") return t.status === "upcoming" && t.player_count < t.max_players;
+          return true;
+        }).length === 0 ? (
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
-            <p className="text-gray-600">No tournaments available right now.</p>
+            <p className="text-gray-600">No tournaments match the selected filter.</p>
           </div>
         ) : (
           <section className="grid gap-4 md:grid-cols-2">
-            {tournaments.map((tournament) => (
+            {tournaments.filter((t) => {
+              if (filter === "college") return t.is_college_only || !!t.scope || !!t.institution_name;
+              if (filter === "open") return t.status === "upcoming" && t.player_count < t.max_players;
+              return true;
+            }).map((tournament) => (
               <div
                 key={tournament.id}
                 className="rounded-lg border border-gray-200 bg-white p-5 transition hover:border-green-300"
               >
                 <div className="mb-3 flex items-center justify-between">
-                  <span className="text-sm text-gray-600">{tournament.game}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-700">{tournament.game}</span>
+                    {tournament.scope && (
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border ${
+                        tournament.scope === "intra"
+                          ? "bg-purple-50 text-purple-700 border-purple-200"
+                          : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      }`}>
+                        {tournament.scope === "intra" ? "🏫 Intra" : "🌐 Inter"}
+                      </span>
+                    )}
+                    {tournament.is_college_only && (
+                      <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 border border-indigo-200">
+                        🎓 College
+                      </span>
+                    )}
+                  </div>
                   <span
                     className={`text-xs font-medium ${
                       tournament.status === "live"
@@ -307,6 +378,9 @@ const { data: tournamentData, error: tournamentError } = await supabase
                 </div>
 
                 <h3 className="text-lg font-semibold">{tournament.title}</h3>
+                {tournament.institution_name && (
+                  <p className="mt-1 text-xs text-gray-500">🏛️ {tournament.institution_name}</p>
+                )}
 
                 <div className="mt-4 space-y-2 text-sm">
                   <div className="flex justify-between">

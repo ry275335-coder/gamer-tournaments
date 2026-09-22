@@ -32,6 +32,10 @@ type Tournament = {
   is_private?: boolean;
   access_number?: string | null;
   access_password?: string | null;
+  scope?: "intra" | "inter" | null;
+  institution_name?: string | null;
+  is_college_only?: boolean;
+  access_code?: string | null;
 };
 
 type Player = {
@@ -99,6 +103,59 @@ export default function OrganizerPage() {
   const [resultPosition, setResultPosition] = useState("1");
   const [resultPrize, setResultPrize] = useState("");
   const [savingResult, setSavingResult] = useState(false);
+
+  // College & Template state
+  const [scope, setScope] = useState<"intra" | "inter" | "">("");
+  const [accessCode, setAccessCode] = useState("");
+  const [isCollegeOnly, setIsCollegeOnly] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState("");
+
+  const TEMPLATES = [
+    {
+      id: "bgmi-squad",
+      name: "College BGMI Squad Championship",
+      game: "BGMI",
+      format: "squad" as const,
+      maxPlayers: "100",
+      entryFee: "50",
+      prizePool: "5000",
+      scope: "intra" as const,
+      isCollegeOnly: true,
+    },
+    {
+      id: "valo-inter",
+      name: "Inter-College Valorant Showdown",
+      game: "Valorant",
+      format: "squad" as const,
+      maxPlayers: "40",
+      entryFee: "100",
+      prizePool: "8000",
+      scope: "inter" as const,
+      isCollegeOnly: true,
+    },
+    {
+      id: "ff-solo",
+      name: "Campus Solo Free Fire Cup",
+      game: "Free Fire",
+      format: "solo" as const,
+      maxPlayers: "50",
+      entryFee: "30",
+      prizePool: "2500",
+      scope: "intra" as const,
+      isCollegeOnly: true,
+    },
+    {
+      id: "quick-elim",
+      name: "College Solo Knockout",
+      game: "BGMI",
+      format: "solo" as const,
+      maxPlayers: "50",
+      entryFee: "25",
+      prizePool: "1500",
+      scope: "intra" as const,
+      isCollegeOnly: true,
+    },
+  ];
 
   const tournamentsPerPage = 5;
 
@@ -272,6 +329,10 @@ export default function OrganizerPage() {
     setIsPrivate(false);
     setAccessNumber("");
     setAccessPassword("");
+    setScope("");
+    setAccessCode("");
+    setIsCollegeOnly(false);
+    setSelectedTemplate("");
     setEditingId(null);
   }
 
@@ -290,7 +351,7 @@ export default function OrganizerPage() {
     const finalAccessNumber = isPrivate ? generateAccessNumber() : null;
     const finalAccessPassword = isPrivate ? generateAccessPassword() : null;
 
-    const { error: createError } = await supabase.from("tournaments").insert({
+    const payload: any = {
       organizer_id: organizer.id,
       title: title.trim(),
       game,
@@ -307,7 +368,22 @@ export default function OrganizerPage() {
       is_private: isPrivate,
       access_number: finalAccessNumber,
       access_password: finalAccessPassword,
-    });
+      scope: scope || null,
+      access_code: accessCode.trim() || null,
+      is_college_only: isCollegeOnly,
+      institution_name: organizer.institution_name || null,
+    };
+
+    let { error: createError } = await supabase.from("tournaments").insert(payload);
+
+    if (createError && createError.message?.includes("does not exist")) {
+      delete payload.scope;
+      delete payload.access_code;
+      delete payload.is_college_only;
+      delete payload.institution_name;
+      const res = await supabase.from("tournaments").insert(payload);
+      createError = res.error;
+    }
 
     if (createError) {
       console.error(createError);
@@ -356,6 +432,9 @@ export default function OrganizerPage() {
     setAccessNumber(tournament.access_number || "");
     setAccessPassword(tournament.access_password || "");
     setRegistrationStatus(tournament.registration_status || "open");
+    setScope((tournament.scope as any) || "");
+    setAccessCode(tournament.access_code || "");
+    setIsCollegeOnly(tournament.is_college_only ?? false);
 
     setShowCreateForm(true);
 
@@ -371,23 +450,40 @@ export default function OrganizerPage() {
     setError("");
     setMessage("");
 
-    const { error: updateError } = await supabase
+    const updatePayload: any = {
+      title: title.trim(),
+      game,
+      format,
+      entry_fee: Number(entryFee),
+      prize_pool: Number(prizePool),
+      max_players: Number(maxPlayers),
+      start_time: new Date(startTime).toISOString(),
+      end_time: new Date(endTime).toISOString(),
+      registration_status: registrationStatus,
+      room_id: roomId.trim() || null,
+      room_password: roomPassword.trim() || null,
+      scope: scope || null,
+      access_code: accessCode.trim() || null,
+      is_college_only: isCollegeOnly,
+    };
+
+    let { error: updateError } = await supabase
       .from("tournaments")
-      .update({
-        title: title.trim(),
-        game,
-        format,
-        entry_fee: Number(entryFee),
-        prize_pool: Number(prizePool),
-        max_players: Number(maxPlayers),
-        start_time: new Date(startTime).toISOString(),
-        end_time: new Date(endTime).toISOString(),
-        registration_status: registrationStatus,
-        room_id: roomId.trim() || null,
-        room_password: roomPassword.trim() || null,
-      })
+      .update(updatePayload)
       .eq("id", editingId)
       .eq("organizer_id", organizer.id);
+
+    if (updateError && updateError.message?.includes("does not exist")) {
+      delete updatePayload.scope;
+      delete updatePayload.access_code;
+      delete updatePayload.is_college_only;
+      const res = await supabase
+        .from("tournaments")
+        .update(updatePayload)
+        .eq("id", editingId)
+        .eq("organizer_id", organizer.id);
+      updateError = res.error;
+    }
 
     if (updateError) {
       console.error(updateError);
@@ -569,9 +665,34 @@ export default function OrganizerPage() {
 
         {/* Welcome */}
         <section className="py-8">
-          <p className="text-sm font-medium text-green-600">Organizer Dashboard</p>
-          <h1 className="mt-2 text-3xl font-bold">Welcome, {organizer?.organizer_name}</h1>
-          <p className="mt-1 text-gray-600">Create and manage your gaming tournaments.</p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-green-600">Organizer Dashboard</span>
+                {organizer?.is_verified ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 border border-blue-200">
+                    ✓ Verified Organizer
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">
+                    ⏳ Verification Pending
+                  </span>
+                )}
+              </div>
+              <h1 className="mt-2 text-3xl font-bold">Welcome, {organizer?.organizer_name}</h1>
+              <p className="mt-1 text-gray-600">
+                {organizer?.institution_name ? `🏛️ ${organizer.institution_name} • ` : ""}
+                Create and manage your gaming tournaments.
+              </p>
+            </div>
+            {organizer?.logo_url && (
+              <img
+                src={organizer.logo_url}
+                alt="Logo"
+                className="h-14 w-14 rounded-full border border-gray-200 object-cover"
+              />
+            )}
+          </div>
         </section>
 
         {/* Messages */}
@@ -638,6 +759,42 @@ export default function OrganizerPage() {
               onSubmit={editingId ? saveTournament : createTournament}
               className="mt-6 space-y-6 rounded-lg border border-gray-200 bg-white p-6"
             >
+              {/* Template Selector */}
+              <div className="rounded-lg border border-purple-200 bg-purple-50/50 p-4">
+                <label className="mb-1 block text-sm font-semibold text-purple-900">
+                  ⚡ Quick College Tournament Template (Optional)
+                </label>
+                <p className="mb-3 text-xs text-purple-700">
+                  Select a college format preset to automatically populate tournament configuration.
+                </p>
+                <select
+                  value={selectedTemplate}
+                  onChange={(e) => {
+                    const tId = e.target.value;
+                    setSelectedTemplate(tId);
+                    const tmpl = TEMPLATES.find((t) => t.id === tId);
+                    if (tmpl) {
+                      setTitle(tmpl.name);
+                      setGame(tmpl.game);
+                      setFormat(tmpl.format);
+                      setMaxPlayers(tmpl.maxPlayers);
+                      setEntryFee(tmpl.entryFee);
+                      setPrizePool(tmpl.prizePool);
+                      setScope(tmpl.scope);
+                      setIsCollegeOnly(tmpl.isCollegeOnly);
+                    }
+                  }}
+                  className="w-full rounded-lg border border-purple-300 bg-white px-4 py-2.5 text-sm text-gray-800 outline-none focus:border-purple-600"
+                >
+                  <option value="">-- Select a Preset or Build Custom --</option>
+                  {TEMPLATES.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} ({t.game} • {t.format.toUpperCase()} • {t.maxPlayers} players)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">
@@ -751,6 +908,63 @@ export default function OrganizerPage() {
                     required
                     className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none focus:border-green-600"
                   />
+                </div>
+              </div>
+
+              {/* College & Institution Settings */}
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-lg font-bold">College & Institution Scope</h3>
+                <p className="mt-1 text-xs text-gray-600">
+                  Target students from your campus or invite other colleges to participate.
+                </p>
+
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                      Participation Scope
+                    </label>
+                    <select
+                      value={scope}
+                      onChange={(e) => setScope(e.target.value as "intra" | "inter" | "")}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none focus:border-green-600"
+                    >
+                      <option value="">General (Open to everyone)</option>
+                      <option value="intra">Intra-College (Only students from this institution)</option>
+                      <option value="inter">Inter-College (Open to competing colleges)</option>
+                    </select>
+                  </div>
+
+                  {scope === "intra" && (
+                    <div>
+                      <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                        Campus Access Code *
+                      </label>
+                      <input
+                        type="text"
+                        value={accessCode}
+                        onChange={(e) => setAccessCode(e.target.value)}
+                        placeholder="e.g. DU-ESPORTS-2026"
+                        required={scope === "intra"}
+                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 outline-none focus:border-green-600"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Students must enter this access code to join.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="collegeOnly"
+                    checked={isCollegeOnly}
+                    onChange={(e) => setIsCollegeOnly(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  />
+                  <label htmlFor="collegeOnly" className="text-sm font-medium text-gray-700">
+                    Mark as College Exclusive Tournament
+                  </label>
                 </div>
               </div>
 
@@ -985,6 +1199,18 @@ export default function OrganizerPage() {
                           {tournament.is_private && (
                             <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-600">
                               PRIVATE
+                            </span>
+                          )}
+
+                          {tournament.scope && (
+                            <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                              {tournament.scope === "intra" ? "INTRA-COLLEGE" : "INTER-COLLEGE"}
+                            </span>
+                          )}
+
+                          {tournament.is_college_only && (
+                            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                              COLLEGE ONLY
                             </span>
                           )}
                         </div>

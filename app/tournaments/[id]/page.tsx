@@ -18,6 +18,21 @@ type Tournament = {
   status: string;
   registration_status?: string;
   is_private?: boolean;
+  organizer_id?: string | null;
+  scope?: "intra" | "inter" | null;
+  institution_name?: string | null;
+  is_college_only?: boolean;
+  access_code?: string | null;
+};
+
+type OrganizerProfile = {
+  id: string;
+  organizer_name: string;
+  organization_name?: string | null;
+  institution_name?: string | null;
+  is_verified?: boolean;
+  logo_url?: string | null;
+  tournaments_count?: number;
 };
 
 type TournamentResult = {
@@ -76,6 +91,7 @@ export default function TournamentDetailsPage() {
   const [message, setMessage] = useState("");
   const [joining, setJoining] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
+  const [organizer, setOrganizer] = useState<OrganizerProfile | null>(null);
 
   useEffect(() => {
     loadTournament();
@@ -121,11 +137,20 @@ export default function TournamentDetailsPage() {
     setRoom(null);
     setIsJoined(false);
 
-    const { data: publicTournament } = await supabase
+    let { data: publicTournament, error: tErr } = await supabase
       .from("tournaments")
-      .select("id, title, game, format, entry_fee, prize_pool, max_players, start_time, end_time, status, registration_status, is_private")
+      .select("id, title, game, format, entry_fee, prize_pool, max_players, start_time, end_time, status, registration_status, is_private, organizer_id, scope, institution_name, is_college_only, access_code")
       .eq("id", tournamentId)
       .maybeSingle();
+
+    if (tErr && tErr.message?.includes("does not exist")) {
+      const fallback = await supabase
+        .from("tournaments")
+        .select("id, title, game, format, entry_fee, prize_pool, max_players, start_time, end_time, status, registration_status, is_private, organizer_id")
+        .eq("id", tournamentId)
+        .maybeSingle();
+      publicTournament = fallback.data as any;
+    }
 
     let tournamentData = publicTournament;
 
@@ -133,6 +158,36 @@ export default function TournamentDetailsPage() {
       setAccessDenied(true);
       setLoading(false);
       return;
+    }
+
+    // Load organizer details if available
+    if (tournamentData.organizer_id) {
+      let { data: orgData, error: orgErr } = await supabase
+        .from("organizers")
+        .select("id, organizer_name, organization_name, institution_name, is_verified, logo_url")
+        .eq("id", tournamentData.organizer_id)
+        .maybeSingle();
+
+      if (orgErr && orgErr.message?.includes("does not exist")) {
+        const fallback = await supabase
+          .from("organizers")
+          .select("id, organizer_name, organization_name")
+          .eq("id", tournamentData.organizer_id)
+          .maybeSingle();
+        orgData = fallback.data as any;
+      }
+
+      if (orgData) {
+        const { count } = await supabase
+          .from("tournaments")
+          .select("*", { count: "exact", head: true })
+          .eq("organizer_id", orgData.id);
+
+        setOrganizer({
+          ...orgData,
+          tournaments_count: count || 1,
+        });
+      }
     }
 
     const {
@@ -238,6 +293,15 @@ export default function TournamentDetailsPage() {
       setMessage("This tournament is not open for joining.");
       setJoining(false);
       return;
+    }
+
+    if (tournament.scope === "intra" && tournament.access_code) {
+      const code = typeof window !== "undefined" ? window.prompt("This is an Intra-College tournament. Please enter your College Access Code:") : null;
+      if (!code || code.trim().toLowerCase() !== tournament.access_code.trim().toLowerCase()) {
+        setMessage("Invalid or missing college access code. Only students with the code can join.");
+        setJoining(false);
+        return;
+      }
     }
 
     const { data: latestTournament } = await supabase
@@ -543,6 +607,60 @@ export default function TournamentDetailsPage() {
           </div>
         )}
 
+        {/* Organizer & College Identity Banner */}
+        {organizer && (
+          <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4">
+                {organizer.logo_url ? (
+                  <img
+                    src={organizer.logo_url}
+                    alt={organizer.organizer_name}
+                    className="h-14 w-14 rounded-full object-cover border border-gray-200"
+                  />
+                ) : (
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-50 text-2xl border border-green-200 text-green-700">
+                    🏛️
+                  </div>
+                )}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-gray-900">{organizer.organizer_name}</h2>
+                    {organizer.is_verified && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700 border border-blue-200">
+                        ✓ Verified Organizer
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    {organizer.institution_name ? `🎓 ${organizer.institution_name}` : organizer.organization_name || "Tournament Organizer"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="rounded-lg bg-gray-50 px-3 py-1.5 text-xs text-gray-600 border border-gray-200">
+                  🏆 <span className="font-semibold text-gray-900">{organizer.tournaments_count || 1}</span> {organizer.tournaments_count === 1 ? "Tournament" : "Tournaments"} Hosted
+                </div>
+                {tournament?.scope && (
+                  <span className={`inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold border ${
+                    tournament.scope === "intra"
+                      ? "bg-purple-50 text-purple-700 border-purple-200"
+                      : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  }`}>
+                    {tournament.scope === "intra" ? "🏫 Intra-College Only" : "🌐 Inter-College Open"}
+                  </span>
+                )}
+                {tournament?.is_college_only && (
+                  <span className="inline-flex items-center rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 border border-indigo-200">
+                    🎓 College Exclusive
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Main Tournament Sections */}
         <section className="grid gap-4 md:grid-cols-2">
           {/* Tournament Information */}
@@ -600,6 +718,18 @@ export default function TournamentDetailsPage() {
                 </p>
               </div>
             </div>
+
+            {tournament.scope && (
+              <div className="mt-3 rounded-lg bg-gray-50 p-3">
+                <p className="text-xs text-gray-500">Institution Scope</p>
+                <p className="mt-1 font-semibold text-purple-700">
+                  {tournament.scope === "intra" ? "Intra-College (Institution Exclusive)" : "Inter-College (Open to Other Colleges)"}
+                </p>
+                {tournament.scope === "intra" && (
+                  <p className="mt-0.5 text-xs text-gray-500">Access code required to join</p>
+                )}
+              </div>
+            )}
 
             <div className="mt-3 rounded-lg bg-gray-50 p-3">
               <p className="text-xs text-gray-500">Start Time</p>

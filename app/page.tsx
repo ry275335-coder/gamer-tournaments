@@ -153,6 +153,9 @@ if (!winnerError && winnerData) {
               <a href="/tournaments" className="text-sm font-medium text-gray-600 no-underline hover:text-green-600">
                 Tournaments
               </a>
+              <a href="/leaderboard" className="text-sm font-medium text-gray-600 no-underline hover:text-green-600">
+                🏆 Leaderboard
+              </a>
               <a href="#how-it-works" className="text-sm font-medium text-gray-600 no-underline hover:text-green-600">
                 How It Works
               </a>
@@ -195,6 +198,9 @@ if (!winnerError && winnerData) {
               </a>
               <a href="/tournaments" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-4 py-2.5 text-gray-600 no-underline hover:bg-gray-50">
                 Tournaments
+              </a>
+              <a href="/leaderboard" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-4 py-2.5 text-gray-600 no-underline hover:bg-gray-50">
+                🏆 College Leaderboard
               </a>
               <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="block rounded-lg px-4 py-2.5 text-gray-600 no-underline hover:bg-gray-50">
                 How It Works
@@ -431,6 +437,7 @@ if (!winnerError && winnerData) {
               <div className="mt-3 space-y-2">
                 <a href="/" className="block text-sm text-gray-600 no-underline hover:text-green-600">Home</a>
                 <a href="/tournaments" className="block text-sm text-gray-600 no-underline hover:text-green-600">Tournaments</a>
+                <a href="/leaderboard" className="block text-sm text-gray-600 no-underline hover:text-green-600">🏆 College Leaderboard</a>
                 <a href="#how-it-works" className="block text-sm text-gray-600 no-underline hover:text-green-600">How It Works</a>
               </div>
             </div>
