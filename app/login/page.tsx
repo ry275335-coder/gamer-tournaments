@@ -200,7 +200,7 @@ export default function LoginPage() {
         <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4">
           <p className="text-center text-sm text-gray-700">
             Admin user?{" "}
-            <a href="/admin/login" className="font-medium text-blue-600 hover:text-blue-500 no-underline">
+            <a href="/admin" className="font-medium text-blue-600 hover:text-blue-500 no-underline">
               Login as Admin
             </a>
           </p>
