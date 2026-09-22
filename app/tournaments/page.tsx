@@ -240,8 +240,11 @@ const { data: tournamentData, error: tournamentError } = await supabase
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#080b12] text-white">
-        <p className="text-gray-400">Loading tournaments...</p>
+      <main className="flex min-h-screen items-center justify-center bg-white text-black">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 w-48 bg-gray-200 rounded"></div>
+          <div className="h-4 w-32 bg-gray-100 rounded"></div>
+        </div>
       </main>
     );
   }

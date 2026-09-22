@@ -67,16 +67,10 @@ export default function OrganizerApplyPage() {
     setLoading(true);
 
     try {
-      /*
-       * Check whether the visitor is already logged in.
-       */
       const {
         data: { user: currentUser },
       } = await supabase.auth.getUser();
 
-      /*
-       * Existing logged-in player becomes organizer.
-       */
       if (currentUser) {
         const { error: organizerError } = await supabase
           .from("organizers")
@@ -114,9 +108,6 @@ export default function OrganizerApplyPage() {
         return;
       }
 
-      /*
-       * New organizer account.
-       */
       const { data: signUpData, error: signUpError } =
         await supabase.auth.signUp({
           email,
@@ -135,9 +126,6 @@ export default function OrganizerApplyPage() {
         return;
       }
 
-      /*
-       * Create organizer profile.
-       */
       const { error: organizerError } = await supabase
         .from("organizers")
         .insert({
@@ -156,10 +144,6 @@ export default function OrganizerApplyPage() {
         return;
       }
 
-      /*
-       * Sign out so the user must explicitly
-       * login through Organizer Login.
-       */
       await supabase.auth.signOut();
 
       setSuccess(
@@ -168,9 +152,6 @@ export default function OrganizerApplyPage() {
 
       setLoading(false);
 
-      /*
-       * Redirect to Organizer Login.
-       */
       setTimeout(() => {
         router.replace("/organizer/login");
       }, 1500);
@@ -183,140 +164,101 @@ export default function OrganizerApplyPage() {
 
   if (checking) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-        <p className="text-slate-400">Loading...</p>
+      <main className="flex min-h-screen items-center justify-center bg-white text-black">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 w-48 bg-gray-200 rounded"></div>
+          <div className="h-4 w-32 bg-gray-100 rounded"></div>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-10 text-white">
-      <div className="mx-auto w-full max-w-2xl">
-
-        {/* Logo */}
+    <main className="min-h-screen bg-white px-4 py-8 text-black">
+      <div className="mx-auto max-w-2xl">
         <div className="mb-8 text-center">
-          <Link
-            href="/"
-            className="inline-block text-3xl font-black tracking-tight"
-          >
-            Game<span className="text-cyan-400">Arena</span>
+          <Link href="/" className="text-3xl font-black text-black no-underline">
+            Game<span className="text-green-600">Arena</span>
           </Link>
 
-          <h1 className="mt-8 text-3xl font-bold">
-            Become an Organizer
-          </h1>
-
-          <p className="mt-2 text-slate-400">
+          <h1 className="mt-8 text-3xl font-bold">Become an Organizer</h1>
+          <p className="mt-2 text-sm text-gray-600">
             Create your organizer account and start hosting tournaments.
           </p>
         </div>
 
-        {/* Form Card */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl sm:p-8">
-
-          {/* Error */}
+        <div className="rounded-lg border border-gray-200 bg-white p-6">
           {error && (
-            <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-
-            {/* Organizer Name */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">
-                1. Organizer Name
-              </label>
-
+              <label className="mb-2 block text-sm font-medium text-gray-700">1. Organizer Name</label>
               <input
                 type="text"
                 required
                 value={organizerName}
                 onChange={(e) => setOrganizerName(e.target.value)}
                 placeholder="Enter organizer name"
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black outline-none placeholder:text-gray-400 focus:border-green-600"
               />
             </div>
 
-            {/* Organization Name */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">
-                2. Organization Name
-              </label>
-
+              <label className="mb-2 block text-sm font-medium text-gray-700">2. Organization Name</label>
               <input
                 type="text"
                 required
                 value={organizationName}
                 onChange={(e) => setOrganizationName(e.target.value)}
                 placeholder="Enter organization name"
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black outline-none placeholder:text-gray-400 focus:border-green-600"
               />
             </div>
 
-            {/* Email */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">
-                3. Email
-              </label>
-
+              <label className="mb-2 block text-sm font-medium text-gray-700">3. Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="organizer@example.com"
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black outline-none placeholder:text-gray-400 focus:border-green-600"
               />
-
-              <p className="mt-2 text-xs text-slate-500">
-                This email will be used for organizer login.
-              </p>
+              <p className="mt-2 text-xs text-gray-500">This email will be used for organizer login.</p>
             </div>
 
-            {/* Phone */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">
-                4. Phone
-              </label>
-
+              <label className="mb-2 block text-sm font-medium text-gray-700">4. Phone</label>
               <input
                 type="tel"
                 required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="Enter phone number"
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black outline-none placeholder:text-gray-400 focus:border-green-600"
               />
-
-              <p className="mt-2 text-xs text-slate-500">
-                Phone login can be added later.
-              </p>
+              <p className="mt-2 text-xs text-gray-500">Phone login can be added later.</p>
             </div>
 
-            {/* Reason */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">
-                5. Reason
-              </label>
-
+              <label className="mb-2 block text-sm font-medium text-gray-700">5. Reason</label>
               <textarea
                 required
                 value={applicationReason}
                 onChange={(e) => setApplicationReason(e.target.value)}
                 placeholder="Why do you want to become an organizer?"
                 rows={5}
-                className="w-full resize-none rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400"
+                className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-black outline-none placeholder:text-gray-400 focus:border-green-600"
               />
             </div>
 
-            {/* Password */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">
-                6. Password
-              </label>
-
+              <label className="mb-2 block text-sm font-medium text-gray-700">6. Password</label>
               <input
                 type="password"
                 required
@@ -324,20 +266,13 @@ export default function OrganizerApplyPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Create a password"
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black outline-none placeholder:text-gray-400 focus:border-green-600"
               />
-
-              <p className="mt-2 text-xs text-slate-500">
-                Password must be at least 6 characters.
-              </p>
+              <p className="mt-2 text-xs text-gray-500">Password must be at least 6 characters.</p>
             </div>
 
-            {/* Confirm Password */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">
-                7. Confirm Password
-              </label>
-
+              <label className="mb-2 block text-sm font-medium text-gray-700">7. Confirm Password</label>
               <input
                 type="password"
                 required
@@ -345,52 +280,35 @@ export default function OrganizerApplyPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm your password"
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-black outline-none placeholder:text-gray-400 focus:border-green-600"
               />
             </div>
 
-            {/* Success Message */}
             {success && (
-              <div className="rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm font-medium text-green-300">
+              <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
                 {success}
               </div>
             )}
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-cyan-500 px-4 py-3.5 font-bold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-lg bg-green-600 py-3.5 font-bold text-white transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading
-                ? "Creating Organizer Account..."
-                : "Create Organizer Account"}
+              {loading ? "Creating Organizer Account..." : "Create Organizer Account"}
             </button>
           </form>
 
-          {/* Login */}
-          <div className="mt-6 border-t border-slate-800 pt-6 text-center">
-            <p className="text-sm text-slate-400">
-              Already have an organizer account?
-            </p>
-
-            <Link
-              href="/organizer/login"
-              className="mt-2 inline-block font-semibold text-cyan-400 hover:text-cyan-300"
-            >
+          <div className="mt-6 border-t border-gray-200 pt-6 text-center">
+            <p className="text-sm text-gray-600">Already have an organizer account?</p>
+            <Link href="/organizer/login" className="mt-2 inline-block font-semibold text-green-600 hover:text-green-500 no-underline">
               Organizer Login
             </Link>
           </div>
         </div>
 
-        {/* Back */}
         <div className="mt-6 text-center">
-          <Link
-            href="/"
-            className="text-sm text-slate-500 hover:text-slate-300"
-          >
-            ← Back to GameArena
-          </Link>
+          <Link href="/" className="text-sm text-gray-600 hover:text-green-600 no-underline">← Back to GameArena</Link>
         </div>
       </div>
     </main>
