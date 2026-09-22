@@ -18,6 +18,7 @@ type Tournament = {
   status: string;
   registration_status?: string;
   is_private?: boolean;
+  access_number?: string | null;
   organizer_id?: string | null;
   scope?: "intra" | "inter" | null;
   institution_name?: string | null;
@@ -140,14 +141,14 @@ export default function TournamentDetailsPage() {
 
     let { data: publicTournament, error: tErr } = await supabase
       .from("tournaments")
-      .select("id, title, game, format, entry_fee, prize_pool, max_players, start_time, end_time, status, registration_status, is_private, organizer_id, scope, is_college_only, access_code")
+      .select("id, title, game, format, entry_fee, prize_pool, max_players, start_time, end_time, status, registration_status, is_private, access_number, organizer_id, scope, is_college_only, access_code")
       .eq("id", tournamentId)
       .maybeSingle();
 
     if (tErr) {
       const fallback = await supabase
         .from("tournaments")
-        .select("id, title, game, format, entry_fee, prize_pool, max_players, start_time, end_time, status, registration_status, is_private, organizer_id")
+        .select("id, title, game, format, entry_fee, prize_pool, max_players, start_time, end_time, status, registration_status, is_private, access_number, organizer_id")
         .eq("id", tournamentId)
         .maybeSingle();
       publicTournament = fallback.data as any;
@@ -296,9 +297,24 @@ export default function TournamentDetailsPage() {
       return;
     }
 
-    if (tournament.scope === "intra" && tournament.access_code) {
-      if (!enteredAccessCode.trim() || enteredAccessCode.trim().toLowerCase() !== tournament.access_code.trim().toLowerCase()) {
-        setMessage("Please enter the correct College Access Code in the field above to join.");
+    // Check if tournament requires access code or access number
+    const validCodes = [
+      tournament.access_code?.trim().toLowerCase(),
+      tournament.access_number?.trim().toLowerCase(),
+    ].filter(Boolean) as string[];
+
+    const sessionAccess = typeof window !== "undefined"
+      ? sessionStorage.getItem(`private-tournament-access-${tournament.id}`)
+      : null;
+    let isSessionGranted = false;
+    try {
+      if (sessionAccess) isSessionGranted = JSON.parse(sessionAccess)?.granted;
+    } catch {}
+
+    if (validCodes.length > 0 && !isSessionGranted) {
+      const entered = enteredAccessCode.trim().toLowerCase();
+      if (!entered || !validCodes.includes(entered)) {
+        setMessage("Please enter the correct Access Number or College Code above to join.");
         setJoining(false);
         return;
       }
@@ -749,20 +765,20 @@ export default function TournamentDetailsPage() {
               <p className="mt-1 text-xl font-bold text-green-600">{timeLeft}</p>
             </div>
 
-            {/* Campus Access Code Input for Intra-College */}
-            {tournament.scope === "intra" && tournament.access_code && !isJoined && (
+            {/* Access Code or Number Input for Restricted Tournaments */}
+            {(tournament.access_code || tournament.access_number) && !isJoined && (
               <div className="mt-3 rounded-lg border border-purple-200 bg-purple-50 p-3">
                 <label className="block text-xs font-semibold text-purple-900">
-                  🏫 Campus Access Code Required
+                  🔒 Access Code or Tournament Number Required
                 </label>
                 <p className="mt-0.5 text-xs text-purple-700">
-                  This tournament is restricted to students from this institution. Enter the access code provided by your organizer:
+                  Enter the tournament Access Number or College Code provided by the organizer:
                 </p>
                 <input
                   type="text"
                   value={enteredAccessCode}
                   onChange={(e) => setEnteredAccessCode(e.target.value)}
-                  placeholder="Enter college access code"
+                  placeholder="Enter access code or tournament number"
                   className="mt-2 w-full rounded-lg border border-purple-300 bg-white px-3 py-2 text-sm text-black outline-none placeholder:text-gray-400 focus:border-purple-600"
                 />
               </div>
